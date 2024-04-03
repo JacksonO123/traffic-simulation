@@ -53,6 +53,21 @@ export class Car extends Square {
       this.pointIndex = this.roadPoints.length - 1;
       this.currentPoint = this.roadPoints[this.pointIndex];
     }
+
+    const startPoint = cloneBuf(this.currentPoint);
+    vec2.add(startPoint, this.route[this.currentRoad].getSpline().getPos(), startPoint);
+
+    this.nextPoint();
+
+    const toPoint = cloneBuf(this.currentPoint);
+    vec2.add(toPoint, this.route[this.currentRoad].getSpline().getPos(), toPoint);
+
+    this.moveTo(startPoint);
+
+    const pos = this.getPos();
+    const rotation = Math.atan2(toPoint[1] - pos[1], toPoint[0] - pos[0]);
+
+    this.rotateTo(rotation);
   }
 
   addToRoute(road: Road) {
@@ -62,24 +77,8 @@ export class Car extends Square {
       this.route.unshift(road);
     }
 
-    console.log(this.route.length);
     if (this.route.length === 1) {
       this.routeUpdated();
-
-      const startPoint = cloneBuf(this.currentPoint);
-      vec2.add(startPoint, this.route[this.currentRoad].getSpline().getPos(), startPoint);
-
-      this.nextPoint();
-
-      const toPoint = cloneBuf(this.currentPoint);
-      vec2.add(toPoint, this.route[this.currentRoad].getSpline().getPos(), toPoint);
-
-      this.moveTo(startPoint);
-
-      const pos = this.getPos();
-      const rotation = Math.atan2(toPoint[1] - pos[1], toPoint[0] - pos[0]);
-
-      this.rotateTo(rotation);
     }
   }
 

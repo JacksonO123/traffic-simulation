@@ -53,12 +53,15 @@ const Traffic = () => {
     canvas.add(car3);
     car3.addToRoute(road);
     car3.setSpeed(6);
+    // car3.setSpeed(10);
 
-    frameLoop(() => {
-      car.travel();
-      car2.travel();
-      car3.travel();
-    })();
+    setTimeout(() => {
+      frameLoop(() => {
+        car.travel();
+        car2.travel();
+        car3.travel();
+      })();
+    }, 1000);
   });
 
   return (
