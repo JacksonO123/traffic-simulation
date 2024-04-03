@@ -191,18 +191,6 @@ export class Road {
     this.spline.setThickness(this.lanes * this.laneWidth + (this.lanes + 1) * this.laneGap);
   }
 
-  // transformCar(car: Car) {
-  //   const length = this.spline.getLength();
-  //   const t = Math.min(car.getDist() / length, 1);
-
-  //   const [pos, tangent] = this.spline.interpolateSlope(t);
-  //   const rotation = Math.atan2(tangent[1], tangent[0]);
-
-  //   car.moveTo(newPos);
-
-  //   car.rotateTo(rotation);
-  // }
-
   getNumLanes() {
     return this.lanes;
   }
