@@ -6,7 +6,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation, road: Road) => {
   const car = new Car(0, 'start', color(0, 123, 255));
   canvas.add(car);
   car.addToRoute(road);
-  car.setSpeed(5);
+  car.setMaxSpeed(5);
   engine.addCar(car);
 
   const car2 = new Car(0, 'start', color(255));
@@ -16,6 +16,6 @@ export const init = (engine: TrafficEngine, canvas: Simulation, road: Road) => {
   engine.addCar(car2);
 
   setTimeout(() => {
-    car2.setSpeed(5);
+    car2.setMaxSpeed(10);
   }, 4000);
 };

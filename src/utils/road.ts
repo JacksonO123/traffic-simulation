@@ -1,10 +1,18 @@
 import { Color, Spline2d, Square, Vector2, cloneBuf, distance2d, vec2, vector2 } from 'simulationjsv2';
 import { StartingPoint } from '../types/traffic';
 import { StepContext } from '../types/traffic';
-import { brakingDistance, carHeight, carWidth, stopDistance } from '../constants';
+import {
+  acceleration,
+  brakeCapacity,
+  brakingDistance,
+  carHeight,
+  carWidth,
+  stopDistance
+} from '../constants';
 
 export class Car extends Square {
   private stepContext: StepContext;
+  private maxSpeed: number;
   private speed: number;
   private lane;
 
@@ -20,6 +28,7 @@ export class Car extends Square {
   constructor(lane: number, startPoint: StartingPoint, color?: Color) {
     super(vector2(), carWidth, carHeight, color, 0, vector2(0.5, 0.5));
 
+    this.maxSpeed = 0;
     this.speed = 0;
     this.lane = lane;
     this.route = [];
@@ -30,7 +39,7 @@ export class Car extends Square {
     this.roadPoints = [];
 
     this.stepContext = {
-      nearbyCars: []
+      carsInFront: []
     };
   }
 
@@ -38,8 +47,8 @@ export class Car extends Square {
     return this.lane;
   }
 
-  setSpeed(speed: number) {
-    this.speed = speed;
+  setMaxSpeed(speed: number) {
+    this.maxSpeed = speed;
   }
 
   setRoute(route: Road[]) {
@@ -140,6 +149,26 @@ export class Car extends Square {
     return vec;
   }
 
+  private getTargetSpeed() {
+    let res = this.maxSpeed;
+
+    if (this.stepContext.carsInFront.length > 0) {
+      const dist = distance2d(this.getPos(), this.stepContext.carsInFront[0].getPos());
+      const ratio = (dist - stopDistance) / brakingDistance;
+      res = this.maxSpeed * ratio;
+    }
+
+    return res;
+  }
+
+  private stepToTargetSpeed(targetSpeed: number) {
+    if (this.speed < targetSpeed) {
+      this.speed = Math.min(targetSpeed, this.speed + acceleration);
+    } else {
+      this.speed = Math.max(targetSpeed, this.speed - brakeCapacity);
+    }
+  }
+
   travel() {
     let toPos = cloneBuf(this.currentPoint);
     let toLookAt = cloneBuf(this.getLookAtPoint());
@@ -149,12 +178,10 @@ export class Car extends Square {
     let pos = this.getPos();
     let rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
 
-    // nearby cars is sorted on distance so the 0th index would be the closest car
-    let toTravel =
-      this.stepContext.nearbyCars.length > 0
-        ? this.speed *
-          ((distance2d(pos, this.stepContext.nearbyCars[0].getPos()) - stopDistance) / brakingDistance)
-        : this.speed;
+    const targetSpeed = this.getTargetSpeed();
+    this.stepToTargetSpeed(targetSpeed);
+
+    let toTravel = this.speed;
 
     let dist = distance2d(pos, toPos);
 
@@ -192,7 +219,7 @@ export class Car extends Square {
   }
 
   setNearbyCars(cars: Car[]) {
-    this.stepContext.nearbyCars = cars;
+    this.stepContext.carsInFront = cars;
   }
 }
 
