@@ -50,7 +50,11 @@ export class RoadData {
 
   getLookAtPoint() {
     if (this.changingLanes) {
-      return this.laneChangePoints[this.laneChangeIndex + 1];
+      if (this.laneChangeIndex < this.laneChangePoints.length - 1) {
+        return this.laneChangePoints[this.laneChangeIndex + 1];
+      }
+
+      return this.laneChangePoints[this.laneChangeIndex];
     }
 
     if (this.roadPointIndex < this.roadPoints.length - 1) {

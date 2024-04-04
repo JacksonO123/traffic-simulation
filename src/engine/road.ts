@@ -77,9 +77,7 @@ export class Car extends Square {
     const toPos = cloneBuf(this.roadData.getCurrentPoint());
     vec2.add(toPos, this.roadData.getCurrentRoad().getSpline().getPos(), toPos);
 
-    this.roadData.nextPoint();
-
-    const toPoint = cloneBuf(this.roadData.getCurrentPoint());
+    const toPoint = cloneBuf(this.roadData.getLookAtPoint());
     vec2.add(toPoint, this.roadData.getCurrentRoad().getSpline().getPos(), toPoint);
 
     let rotation = Math.atan2(toPoint[1] - toPos[1], toPoint[0] - toPos[0]);
@@ -119,8 +117,11 @@ export class Car extends Square {
   travel() {
     let toPos = cloneBuf(this.roadData.getCurrentPoint());
     let toLookAt = cloneBuf(this.roadData.getLookAtPoint());
-    vec2.add(toPos, this.roadData.getCurrentRoad().getSpline().getPos(), toPos);
-    vec2.add(toLookAt, this.roadData.getCurrentRoad().getSpline().getPos(), toLookAt);
+
+    const splinePos = this.roadData.getCurrentRoad().getSpline().getPos();
+
+    vec2.add(toPos, splinePos, toPos);
+    vec2.add(toLookAt, splinePos, toLookAt);
 
     let pos = this.getPos();
     let rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
@@ -156,8 +157,8 @@ export class Car extends Square {
         toPos = cloneBuf(this.roadData.getCurrentPoint());
         toLookAt = cloneBuf(this.roadData.getLookAtPoint());
 
-        vec2.add(toPos, this.roadData.getCurrentRoad().getSpline().getPos(), toPos);
-        vec2.add(toLookAt, this.roadData.getCurrentRoad().getSpline().getPos(), toLookAt);
+        vec2.add(toPos, splinePos, toPos);
+        vec2.add(toLookAt, splinePos, toLookAt);
 
         rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
         dist = distance2d(pos, toPos);
