@@ -2,16 +2,17 @@
 
 The goal of this project is to try to accurately simulate the behavior of traffic on highways and roadways
 
-## Currently working on: **Breaking**
+## Currently working on: **Decision making**
 
-Currently breaking is dependent on the distance to the car in front of you.
-
-In the future the amount of speed deducted will depend on a breaking amount parameter that is derived from a distance function to the nearest car in front.
+Cars should change lanes if they are behind a slow car, or stopped in traffic
 
 ## Todo
 
-- [ ] Acceleration
-- [ ] Lane changing
+- [x] Acceleration
+- [x] Lane changing
+- [ ] Add speed limits for roads
+- [ ] Decision making
+  - Cars should know when to change lanes
 
 ## Technical details
 
