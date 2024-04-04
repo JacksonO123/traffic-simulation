@@ -1,21 +1,24 @@
 import { Color, Spline2d, Square, Vector2, cloneBuf, distance2d, vec2, vector2 } from 'simulationjsv2';
-import { StartingPoint } from '../types/road';
+import { StartingPoint } from '../types/traffic';
+import { StepContext } from '../types/traffic';
+import { brakingDistance, carHeight, carWidth, stopDistance } from '../constants';
 
 export class Car extends Square {
+  private stepContext: StepContext;
   private speed: number;
   private lane;
-  private currentRoad: number;
+
   private route: Road[];
-  private startPoint: StartingPoint;
+  private currentRoad: number;
+
+  private roadPoints: Vector2[];
   private currentPoint: Vector2;
   private pointIndex: number;
-  private roadPoints: Vector2[];
+
+  private startPoint: StartingPoint;
 
   constructor(lane: number, startPoint: StartingPoint, color?: Color) {
-    const width = 50;
-    const height = 25;
-
-    super(vector2(), width, height, color, 0, vector2(0.5, 0.5));
+    super(vector2(), carWidth, carHeight, color, 0, vector2(0.5, 0.5));
 
     this.speed = 0;
     this.lane = lane;
@@ -25,6 +28,10 @@ export class Car extends Square {
     this.currentPoint = vector2();
     this.pointIndex = 0;
     this.roadPoints = [];
+
+    this.stepContext = {
+      nearbyCars: []
+    };
   }
 
   getLane() {
@@ -82,6 +89,29 @@ export class Car extends Square {
     }
   }
 
+  /**
+   * @param num - value from 0 to 1 for where the car should start on the road
+   */
+  startAt(num: number) {
+    const index = Math.floor(this.roadPoints.length * num);
+
+    this.pointIndex = index;
+    this.currentPoint = this.roadPoints[this.pointIndex];
+
+    const toPos = cloneBuf(this.currentPoint);
+    vec2.add(toPos, this.route[this.currentRoad].getSpline().getPos(), toPos);
+
+    this.nextPoint();
+
+    const toPoint = cloneBuf(this.currentPoint);
+    vec2.add(toPoint, this.route[this.currentRoad].getSpline().getPos(), toPoint);
+
+    let rotation = Math.atan2(toPoint[1] - toPos[1], toPoint[0] - toPos[0]);
+
+    this.moveTo(toPos);
+    this.rotateTo(rotation);
+  }
+
   private nextPoint() {
     if (this.pointIndex >= this.roadPoints.length) return;
 
@@ -94,16 +124,39 @@ export class Car extends Square {
     this.currentPoint = this.roadPoints[this.pointIndex];
   }
 
-  travel() {
-    let toPoint = cloneBuf(this.currentPoint);
-    vec2.add(toPoint, this.route[this.currentRoad].getSpline().getPos(), toPoint);
+  private getLookAtPoint() {
+    if (this.pointIndex < this.roadPoints.length - 1) {
+      return this.roadPoints[this.pointIndex + 1];
+    }
 
-    let toTravel = this.speed;
+    return this.currentPoint;
+  }
+
+  getDirectionVector() {
+    const vec = vector2(1);
+
+    vec2.rotate(vec, vector2(), this.getRotation(), vec);
+
+    return vec;
+  }
+
+  travel() {
+    let toPos = cloneBuf(this.currentPoint);
+    let toLookAt = cloneBuf(this.getLookAtPoint());
+    vec2.add(toPos, this.route[this.currentRoad].getSpline().getPos(), toPos);
+    vec2.add(toLookAt, this.route[this.currentRoad].getSpline().getPos(), toLookAt);
 
     let pos = this.getPos();
-    let rotation = Math.atan2(toPoint[1] - pos[1], toPoint[0] - pos[0]);
+    let rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
 
-    let dist = distance2d(pos, toPoint);
+    // nearby cars is sorted on distance so the 0th index would be the closest car
+    let toTravel =
+      this.stepContext.nearbyCars.length > 0
+        ? this.speed *
+          ((distance2d(pos, this.stepContext.nearbyCars[0].getPos()) - stopDistance) / brakingDistance)
+        : this.speed;
+
+    let dist = distance2d(pos, toPos);
 
     const moveCar = (amount: number) => {
       if (isNaN(rotation)) return;
@@ -124,13 +177,22 @@ export class Car extends Square {
         toTravel -= dist;
 
         this.nextPoint();
+
         pos = this.getPos();
-        toPoint = cloneBuf(this.currentPoint);
-        vec2.add(toPoint, this.route[this.currentRoad].getSpline().getPos(), toPoint);
-        rotation = Math.atan2(toPoint[1] - pos[1], toPoint[0] - pos[0]);
-        dist = distance2d(pos, toPoint);
+        toPos = cloneBuf(this.currentPoint);
+        toLookAt = cloneBuf(this.getLookAtPoint());
+
+        vec2.add(toPos, this.route[this.currentRoad].getSpline().getPos(), toPos);
+        vec2.add(toLookAt, this.route[this.currentRoad].getSpline().getPos(), toLookAt);
+
+        rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
+        dist = distance2d(pos, toPos);
       }
     }
+  }
+
+  setNearbyCars(cars: Car[]) {
+    this.stepContext.nearbyCars = cars;
   }
 }
 
