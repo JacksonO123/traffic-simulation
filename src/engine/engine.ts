@@ -1,6 +1,6 @@
 import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
 import { Car } from './road';
-import { brakingDistance } from '../constants';
+import { brakingDistance, stopDistance } from '../constants';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -28,7 +28,7 @@ export class TrafficEngine {
 
       const dist = distance2d(car.getPos(), this.cars[i].getPos());
 
-      if (dist > brakingDistance) continue;
+      if (dist > brakingDistance + stopDistance) continue;
 
       const directionVec = car.getDirectionVector();
       const posVec = cloneBuf(this.cars[i].getPos());

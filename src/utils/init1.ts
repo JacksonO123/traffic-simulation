@@ -1,6 +1,6 @@
 import { Simulation, color } from 'simulationjsv2';
-import { TrafficEngine } from './engine';
-import { Car, Road } from './road';
+import { TrafficEngine } from '../engine/engine';
+import { Car, Road } from '../engine/road';
 
 export const init = (engine: TrafficEngine, canvas: Simulation, road: Road) => {
   const car = new Car(0, 'start', color(0, 123, 255));

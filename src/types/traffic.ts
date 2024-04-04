@@ -1,4 +1,4 @@
-import { Car } from '../utils/road';
+import { Car } from '../engine/road';
 
 export type StartingPoint = 'start' | 'end';
 

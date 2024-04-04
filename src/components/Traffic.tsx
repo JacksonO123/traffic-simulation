@@ -11,9 +11,10 @@ import {
 } from 'simulationjsv2';
 import { onMount } from '@jacksonotto/pulse';
 import './Traffic.css';
-import { Road } from '../utils/road';
-import { TrafficEngine } from '../utils/engine';
+import { Road } from '../engine/road';
+import { TrafficEngine } from '../engine/engine';
 import { init } from '../utils/init2';
+import { carHeight } from '../constants';
 
 const Traffic = () => {
   const canvasId = 'simulation';
@@ -26,7 +27,7 @@ const Traffic = () => {
     canvas.setBackground(colorf(0));
 
     const roadSpline = new Spline2d(
-      vertex(100, -100, 0, colorf(255)),
+      vertex(100, -100, 0, colorf(75)),
       [
         splinePoint2d(vertex(500, -400), vector2(400), vector2(-400)),
         continuousSplinePoint2d(vertex(500, -800), vector2(400))
@@ -34,10 +35,10 @@ const Traffic = () => {
       100
     );
 
-    roadSpline.setWireframe(true);
+    // roadSpline.setWireframe(true);
     canvas.add(roadSpline);
 
-    const road = new Road(roadSpline, 3, 25);
+    const road = new Road(roadSpline, 3, carHeight);
 
     const engine = new TrafficEngine();
 
