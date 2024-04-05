@@ -60,7 +60,7 @@ export class TrafficEngine {
     for (let i = 0; i < this.cars.length; i++) {
       const nearbyCars = this.getCarsAhead(this.cars[i]);
 
-      this.cars[i].setNearbyCars(nearbyCars);
+      this.cars[i].setCarsAhead(nearbyCars);
       this.cars[i].travel();
     }
   }

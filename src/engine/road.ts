@@ -181,7 +181,7 @@ export class Car extends Square {
     }
   }
 
-  setNearbyCars(cars: Car[]) {
+  setCarsAhead(cars: Car[]) {
     this.stepContext.carsInFront = cars;
   }
 }
