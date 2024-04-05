@@ -6,6 +6,7 @@ import { laneChangeSteps } from '../constants';
 export class RoadData {
   private startPoint: StartingPoint;
   private lane: number;
+  private loop: boolean;
 
   private route: Road[];
   private roadIndex: number;
@@ -17,9 +18,10 @@ export class RoadData {
   private laneChangePoints: Vector2[];
   private laneChangeIndex: number;
 
-  constructor(lane: number, startPoint: StartingPoint) {
+  constructor(lane: number, startPoint: StartingPoint, loop = false) {
     this.startPoint = startPoint;
     this.lane = lane;
+    this.loop = loop;
 
     this.route = [];
     this.roadIndex = 0;
@@ -147,7 +149,35 @@ export class RoadData {
       }
     }
 
-    if (this.roadPointIndex >= this.roadPoints.length) return;
+    if (this.roadPointIndex >= this.roadPoints.length) {
+      if (this.startPoint === 'start') {
+        if (this.roadIndex < this.route.length - 1) {
+          this.roadIndex++;
+
+          this.roadPointIndex = 0;
+          this.roadPoints = this.getCurrentRoad().getRoadPoints(this.lane);
+        } else if (this.loop) {
+          this.roadIndex = 0;
+
+          this.roadPointIndex = 0;
+          this.roadPoints = this.getCurrentRoad().getRoadPoints(this.lane);
+        }
+      } else {
+        if (this.roadIndex > 0) {
+          this.roadIndex--;
+
+          this.roadPoints = this.getCurrentRoad().getRoadPoints(this.lane);
+          this.roadPointIndex = this.roadPoints.length - 1;
+        } else if (this.loop) {
+          this.roadIndex = this.route.length - 1;
+
+          this.roadPoints = this.getCurrentRoad().getRoadPoints(this.lane);
+          this.roadPointIndex = this.roadPoints.length - 1;
+        }
+      }
+
+      return;
+    }
 
     if (this.startPoint === 'start') {
       this.roadPointIndex++;

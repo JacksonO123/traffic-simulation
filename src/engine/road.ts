@@ -1,4 +1,17 @@
-import { Color, Spline2d, Square, Vector2, cloneBuf, distance2d, vec2, vector2 } from 'simulationjsv2';
+import {
+  Color,
+  Line2d,
+  SceneCollection,
+  Spline2d,
+  Square,
+  Vector2,
+  cloneBuf,
+  color,
+  distance2d,
+  vec2,
+  vector2,
+  vertex
+} from 'simulationjsv2';
 import { StartingPoint } from '../types/traffic';
 import { StepContext } from '../types/traffic';
 import {
@@ -11,6 +24,8 @@ import {
 } from '../constants';
 import { RoadData } from './data';
 
+export const laneLines = new SceneCollection('lane-lines');
+
 export class Car extends Square {
   private stepContext: StepContext;
   private maxSpeed: number;
@@ -18,13 +33,13 @@ export class Car extends Square {
 
   private roadData: RoadData;
 
-  constructor(lane: number, startPoint: StartingPoint, color?: Color) {
+  constructor(lane: number, startPoint: StartingPoint, color?: Color, loop = false) {
     super(vector2(), carWidth, carHeight, color, 0, vector2(0.5, 0.5));
 
     this.maxSpeed = 0;
     this.speed = 0;
 
-    this.roadData = new RoadData(lane, startPoint);
+    this.roadData = new RoadData(lane, startPoint, loop);
 
     this.stepContext = {
       carsInFront: []
@@ -188,6 +203,36 @@ export class Road {
     this.updateRoadPoints(this.spline.getLength());
   }
 
+  private createLaneLine(points: Vector2[]) {
+    const skip = 20;
+
+    const addLine = (toIndex: number, fromIndex?: number) => {
+      const pos = cloneBuf(points[fromIndex ? fromIndex : toIndex - skip]);
+      vec2.add(pos, this.spline.getPos(), pos);
+
+      const diff = cloneBuf(points[toIndex]);
+      vec2.add(diff, this.spline.getPos(), diff);
+      vec2.scale(diff, 1 / devicePixelRatio, diff);
+
+      const line = new Line2d(
+        vertex(pos[0], pos[1], pos[2], color(0, 255, 255)),
+        vertex(diff[0], diff[1], diff[2])
+      );
+      laneLines.add(line);
+    };
+
+    let i = skip;
+    for (; i < points.length; i += skip) {
+      addLine(i);
+    }
+
+    i -= skip;
+
+    if (i < points.length - 1) {
+      addLine(points.length - 1, i);
+    }
+  }
+
   private updateRoadPoints(detail: number) {
     for (let lane = 0; lane < this.lanes; lane++) {
       const arr: Vector2[] = [];
@@ -210,6 +255,8 @@ export class Road {
 
         arr.push(pos);
       }
+
+      this.createLaneLine(arr);
 
       this.roadPoints.push(arr);
     }

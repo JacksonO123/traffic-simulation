@@ -36,6 +36,11 @@ export class TrafficEngine {
 
       const dot = vec2.dot(directionVec, posVec);
 
+      // const rot1 = Math.atan2(directionVec[1], directionVec[0]);
+      // const rot2 = Math.atan2(posVec[1], posVec[0]);
+      // const rotDiff = Math.abs(rot1 - rot2);
+      // if (dot > 0 && rotDiff <= Math.PI / 6) {
+
       if (dot > 0) {
         let insertIndex = 0;
 
