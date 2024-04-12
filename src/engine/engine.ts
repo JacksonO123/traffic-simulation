@@ -1,6 +1,6 @@
 import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
 import { Car } from './road';
-import { brakingDistance, stopDistance } from '../constants';
+import { brakingDistance, fps60Delay, stopDistance } from '../constants';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -36,11 +36,6 @@ export class TrafficEngine {
 
       const dot = vec2.dot(directionVec, posVec);
 
-      // const rot1 = Math.atan2(directionVec[1], directionVec[0]);
-      // const rot2 = Math.atan2(posVec[1], posVec[0]);
-      // const rotDiff = Math.abs(rot1 - rot2);
-      // if (dot > 0 && rotDiff <= Math.PI / 6) {
-
       if (dot > 0) {
         let insertIndex = 0;
 
@@ -56,23 +51,43 @@ export class TrafficEngine {
     return res;
   }
 
-  tick() {
+  private getLaneChange(_car: Car) {
+    return 1;
+  }
+
+  tick(scale: number) {
     for (let i = 0; i < this.cars.length; i++) {
+      if (this.cars[i].wantsLaneChange()) {
+        const toLane = this.getLaneChange(this.cars[i]);
+
+        if (toLane > -1) {
+          this.cars[i].setLane(toLane);
+        }
+      }
+
       const nearbyCars = this.getCarsAhead(this.cars[i]);
 
       this.cars[i].setCarsAhead(nearbyCars);
-      this.cars[i].travel();
+      this.cars[i].travel(scale);
     }
   }
 
   start() {
+    let start = performance.now() - 10;
+
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
 
     const run = () => {
-      this.tick();
+      const now = performance.now();
+      const diff = now - start;
+      const scale = diff / fps60Delay;
+      start = now;
+
+      this.tick(scale);
+
       this.animationId = requestAnimationFrame(run);
     };
 

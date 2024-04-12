@@ -1,7 +1,7 @@
 import { Vector2, cloneBuf, easeInOutQuad, vec2 } from 'simulationjsv2';
 import { Road } from './road';
 import { StartingPoint } from '../types/traffic';
-import { laneChangeSteps } from '../constants';
+import { minLaneChangeSteps } from '../constants';
 
 export class RoadData {
   private startPoint: StartingPoint;
@@ -38,6 +38,10 @@ export class RoadData {
     return this.lane;
   }
 
+  isChangingLanes() {
+    return this.changingLanes;
+  }
+
   getCurrentRoad() {
     return this.route[this.roadIndex];
   }
@@ -52,15 +56,23 @@ export class RoadData {
 
   getLookAtPoint() {
     if (this.changingLanes) {
-      if (this.laneChangeIndex < this.laneChangePoints.length - 1) {
-        return this.laneChangePoints[this.laneChangeIndex + 1];
+      if (this.startPoint === 'start') {
+        if (this.laneChangeIndex < this.laneChangePoints.length - 1) {
+          return this.laneChangePoints[this.laneChangeIndex + 1];
+        }
+      } else {
+        return this.laneChangePoints[Math.max(this.laneChangeIndex - 1, 0)];
       }
 
       return this.laneChangePoints[this.laneChangeIndex];
     }
 
-    if (this.roadPointIndex < this.roadPoints.length - 1) {
-      return this.roadPoints[this.roadPointIndex + 1];
+    if (this.startPoint === 'start') {
+      if (this.roadPointIndex < this.roadPoints.length - 1) {
+        return this.roadPoints[this.roadPointIndex + 1];
+      }
+    } else {
+      return this.roadPoints[Math.max(this.roadPointIndex - 1, 0)];
     }
 
     return this.getCurrentPoint();
@@ -93,11 +105,13 @@ export class RoadData {
     return res;
   }
 
-  setLane(lane: number) {
+  setLane(lane: number, currentSpeed: number) {
     this.roadPoints = this.getCurrentRoad().getRoadPoints(lane);
 
+    const laneDist = Math.max(minLaneChangeSteps, 4 * Math.log(currentSpeed));
+
     this.resetLaneChange(true);
-    this.laneChangePoints = this.interpolateLaneChange(laneChangeSteps, this.lane, lane);
+    this.laneChangePoints = this.interpolateLaneChange(laneDist, this.lane, lane);
 
     this.lane = lane;
   }

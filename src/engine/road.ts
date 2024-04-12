@@ -20,6 +20,9 @@ import {
   brakingDistance,
   carHeight,
   carWidth,
+  idleSpeed,
+  laneChangeAcceleration,
+  minSpeed,
   stopDistance
 } from '../constants';
 import { RoadData } from './data';
@@ -37,7 +40,7 @@ export class Car extends Square {
     super(vector2(), carWidth, carHeight, color, 0, vector2(0.5, 0.5));
 
     this.maxSpeed = 0;
-    this.speed = 0;
+    this.speed = 0.1;
 
     this.roadData = new RoadData(lane, startPoint, loop);
 
@@ -51,7 +54,11 @@ export class Car extends Square {
   }
 
   setLane(lane: number) {
-    this.roadData.setLane(lane);
+    this.roadData.setLane(lane, this.speed);
+  }
+
+  isChangingLanes() {
+    return this.roadData.isChangingLanes();
   }
 
   setMaxSpeed(speed: number) {
@@ -109,8 +116,14 @@ export class Car extends Square {
     return vec;
   }
 
+  wantsLaneChange() {
+    if (this.stepContext.carsInFront.length > 0 && this.speed <= idleSpeed) return true;
+    return false;
+  }
+
   private getTargetSpeed() {
-    let res = this.maxSpeed;
+    const road = this.roadData.getCurrentRoad();
+    let res = Math.min(this.maxSpeed, road.getSpeedLimit());
 
     if (this.stepContext.carsInFront.length > 0) {
       const dist = distance2d(this.getPos(), this.stepContext.carsInFront[0].getPos());
@@ -123,13 +136,16 @@ export class Car extends Square {
 
   private stepToTargetSpeed(targetSpeed: number) {
     if (this.speed < targetSpeed) {
-      this.speed = Math.min(targetSpeed, this.speed + acceleration);
+      const accelAmount = this.isChangingLanes() ? laneChangeAcceleration : acceleration;
+      this.speed = Math.min(targetSpeed, this.speed + accelAmount);
     } else {
       this.speed = Math.max(targetSpeed, this.speed - brakeCapacity);
     }
+
+    if (this.speed < minSpeed) this.speed = 0;
   }
 
-  travel() {
+  travel(scale: number) {
     let toPos = cloneBuf(this.roadData.getCurrentPoint());
     let toLookAt = cloneBuf(this.roadData.getLookAtPoint());
 
@@ -144,8 +160,7 @@ export class Car extends Square {
     const targetSpeed = this.getTargetSpeed();
     this.stepToTargetSpeed(targetSpeed);
 
-    let toTravel = this.speed;
-
+    let toTravel = this.speed * scale;
     let dist = distance2d(pos, toPos);
 
     const moveCar = (amount: number) => {
@@ -192,15 +207,18 @@ export class Road {
   private lanes: number;
   private laneWidth: number;
   private laneGap = 8;
+  private speedLimit: number;
 
-  constructor(roadSpline: Spline2d, numLanes: number, laneWidth: number) {
+  constructor(roadSpline: Spline2d, numLanes: number, speedLimit: number, laneWidth: number) {
     this.spline = roadSpline;
     this.lanes = numLanes;
     this.laneWidth = laneWidth;
     this.roadPoints = [];
+    this.speedLimit = speedLimit;
 
     this.setWidthToLanes();
-    this.updateRoadPoints(this.spline.getLength());
+    const scale = 2 / devicePixelRatio;
+    this.updateRoadPoints(this.spline.getLength() * scale);
   }
 
   private createLaneLine(points: Vector2[]) {
@@ -276,5 +294,9 @@ export class Road {
 
   getNumLanes() {
     return this.lanes;
+  }
+
+  getSpeedLimit() {
+    return this.speedLimit;
   }
 }
