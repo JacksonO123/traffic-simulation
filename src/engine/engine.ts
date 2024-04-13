@@ -1,6 +1,12 @@
 import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
 import { Car } from './road';
-import { brakingDistance, fps60Delay, laneChangeMinDist, stopDistance } from '../constants';
+import {
+  brakingDistance,
+  fps60Delay,
+  laneChangeMinDist,
+  laneChangeMinFrontDist,
+  stopDistance
+} from '../constants';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -99,9 +105,19 @@ export class TrafficEngine {
     }
 
     const dist = distance2d(car.getPos(), cars[0].getPos());
+    const directionVec = car.getDirectionVector();
+    const posVec = cloneBuf(cars[0].getPos());
+    vec2.sub(posVec, car.getPos(), posVec);
+    const dot = vec2.dot(directionVec, posVec);
 
-    if (dist <= laneChangeMinDist) {
-      return [false, dist];
+    if (dot > 0) {
+      if (dist <= laneChangeMinFrontDist) {
+        return [false, dist];
+      }
+    } else {
+      if (dist <= laneChangeMinDist) {
+        return [false, dist];
+      }
     }
 
     return [true, dist];

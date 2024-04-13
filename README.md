@@ -10,8 +10,8 @@ Cars should change lanes if they are behind a slow car, or stopped in traffic
 
 - [x] Acceleration
 - [x] Lane changing
-- [ ] Add speed limits for roads
-- [ ] Decision making
+- [x] Add speed limits for roads
+- [x] Decision making
   - Cars should know when to change lanes
 
 ## Technical details
