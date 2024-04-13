@@ -1,3 +1,5 @@
+export const laneGap = 8;
+
 export const carWidth = 50;
 export const carHeight = 25;
 
@@ -12,7 +14,11 @@ export const stopDistance = rawStopDistance + carWidth * devicePixelRatio;
 export const laneChangeAcceleration = 0.02;
 export const acceleration = 0.1;
 
-export const minLaneChangeSteps = 150;
+export const laneChangeStartDist = 125 * devicePixelRatio;
+export const minLaneChangeSteps = 200;
+const laneChangeX = carWidth;
+const laneChangeY = carHeight + laneGap;
+export const laneChangeMinDist = Math.sqrt(laneChangeX * laneChangeX + laneChangeY * laneChangeY);
 
 export const minSpeed = 0.0002;
 export const idleSpeed = 1.5;

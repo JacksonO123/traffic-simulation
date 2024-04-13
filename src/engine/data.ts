@@ -1,5 +1,5 @@
 import { Vector2, cloneBuf, easeInOutQuad, vec2 } from 'simulationjsv2';
-import { Road } from './road';
+import { Car, Road } from './road';
 import { StartingPoint } from '../types/traffic';
 import { minLaneChangeSteps } from '../constants';
 
@@ -14,11 +14,12 @@ export class RoadData {
   private roadPoints: Vector2[];
   private roadPointIndex: number;
 
+  private canChangeLane: boolean;
   private changingLanes: boolean;
   private laneChangePoints: Vector2[];
   private laneChangeIndex: number;
 
-  constructor(lane: number, startPoint: StartingPoint, loop = false) {
+  constructor(lane: number, startPoint: StartingPoint, loop = false, canChangeLane = true) {
     this.startPoint = startPoint;
     this.lane = lane;
     this.loop = loop;
@@ -29,6 +30,7 @@ export class RoadData {
     this.roadPoints = [];
     this.roadPointIndex = 0;
 
+    this.canChangeLane = canChangeLane;
     this.changingLanes = false;
     this.laneChangePoints = [];
     this.laneChangeIndex = 0;
@@ -94,10 +96,14 @@ export class RoadData {
       const index = i + this.roadPointIndex;
       const ratio = easeInOutQuad(i / numPoints);
 
+      const fromPoints = laneFromPoints[index];
+
+      if (fromPoints === undefined) continue;
+
       const vec = cloneBuf(laneToPoints[index]);
-      vec2.sub(vec, laneFromPoints[index], vec);
+      vec2.sub(vec, fromPoints, vec);
       vec2.scale(vec, ratio, vec);
-      vec2.add(vec, laneFromPoints[index], vec);
+      vec2.add(vec, fromPoints, vec);
 
       res.push(vec);
     }
@@ -106,6 +112,8 @@ export class RoadData {
   }
 
   setLane(lane: number, currentSpeed: number) {
+    if (!this.canChangeLane) return;
+
     this.roadPoints = this.getCurrentRoad().getRoadPoints(lane);
 
     const laneDist = Math.max(minLaneChangeSteps, 4 * Math.log(currentSpeed));
@@ -198,5 +206,21 @@ export class RoadData {
     } else {
       this.roadPointIndex--;
     }
+  }
+}
+
+export class StepContext {
+  private obstaclesAhead: Car[];
+
+  constructor() {
+    this.obstaclesAhead = [];
+  }
+
+  setObstaclesAhead(obstacles: Car[]) {
+    this.obstaclesAhead = obstacles;
+  }
+
+  getObstaclesAhead() {
+    return this.obstaclesAhead;
   }
 }

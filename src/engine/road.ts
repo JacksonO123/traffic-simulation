@@ -13,7 +13,6 @@ import {
   vertex
 } from 'simulationjsv2';
 import { StartingPoint } from '../types/traffic';
-import { StepContext } from '../types/traffic';
 import {
   acceleration,
   brakeCapacity,
@@ -22,10 +21,12 @@ import {
   carWidth,
   idleSpeed,
   laneChangeAcceleration,
+  laneChangeStartDist,
+  laneGap,
   minSpeed,
   stopDistance
 } from '../constants';
-import { RoadData } from './data';
+import { RoadData, StepContext } from './data';
 
 export const laneLines = new SceneCollection('lane-lines');
 
@@ -36,17 +37,15 @@ export class Car extends Square {
 
   private roadData: RoadData;
 
-  constructor(lane: number, startPoint: StartingPoint, color?: Color, loop = false) {
+  constructor(lane: number, startPoint: StartingPoint, color?: Color, loop = false, canChangeLane = true) {
     super(vector2(), carWidth, carHeight, color, 0, vector2(0.5, 0.5));
 
     this.maxSpeed = 0;
     this.speed = 0.1;
 
-    this.roadData = new RoadData(lane, startPoint, loop);
+    this.roadData = new RoadData(lane, startPoint, loop, canChangeLane);
 
-    this.stepContext = {
-      carsInFront: []
-    };
+    this.stepContext = new StepContext();
   }
 
   getLane() {
@@ -117,16 +116,30 @@ export class Car extends Square {
   }
 
   wantsLaneChange() {
-    if (this.stepContext.carsInFront.length > 0 && this.speed <= idleSpeed) return true;
+    const obstaclesAhead = this.stepContext.getObstaclesAhead();
+
+    if (obstaclesAhead.length > 0) {
+      const minDist = distance2d(this.getPos(), obstaclesAhead[0].getPos());
+      if (minDist < laneChangeStartDist && this.speed <= idleSpeed) return true;
+
+      return false;
+    }
+
     return false;
+  }
+
+  getCurrentRoad() {
+    return this.roadData.getCurrentRoad();
   }
 
   private getTargetSpeed() {
     const road = this.roadData.getCurrentRoad();
     let res = Math.min(this.maxSpeed, road.getSpeedLimit());
 
-    if (this.stepContext.carsInFront.length > 0) {
-      const dist = distance2d(this.getPos(), this.stepContext.carsInFront[0].getPos());
+    const obstaclesAhead = this.stepContext.getObstaclesAhead();
+
+    if (obstaclesAhead.length > 0) {
+      const dist = distance2d(this.getPos(), obstaclesAhead[0].getPos());
       const ratio = (dist - stopDistance) / brakingDistance;
       res = this.maxSpeed * ratio;
     }
@@ -196,8 +209,8 @@ export class Car extends Square {
     }
   }
 
-  setCarsAhead(cars: Car[]) {
-    this.stepContext.carsInFront = cars;
+  setObstaclesAhead(cars: Car[]) {
+    this.stepContext.setObstaclesAhead(cars);
   }
 }
 
@@ -206,7 +219,6 @@ export class Road {
   private roadPoints: Vector2[][];
   private lanes: number;
   private laneWidth: number;
-  private laneGap = 8;
   private speedLimit: number;
 
   constructor(roadSpline: Spline2d, numLanes: number, speedLimit: number, laneWidth: number) {
@@ -264,11 +276,7 @@ export class Road {
 
         const normal = vector2(-tangent[1], tangent[0]);
         vec2.normalize(normal, normal);
-        vec2.scale(
-          normal,
-          (this.laneWidth * scale - indexDistance * this.laneGap) * devicePixelRatio,
-          normal
-        );
+        vec2.scale(normal, (this.laneWidth * scale - indexDistance * laneGap) * devicePixelRatio, normal);
         vec2.add(pos, normal, pos);
 
         arr.push(pos);
@@ -289,7 +297,7 @@ export class Road {
   }
 
   private setWidthToLanes() {
-    this.spline.setThickness(this.lanes * this.laneWidth + (this.lanes + 1) * this.laneGap);
+    this.spline.setThickness(this.lanes * this.laneWidth + (this.lanes + 1) * laneGap);
   }
 
   getNumLanes() {
