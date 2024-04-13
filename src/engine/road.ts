@@ -19,6 +19,7 @@ import {
   brakingDistance,
   carHeight,
   carWidth,
+  idprScale,
   idleSpeed,
   laneChangeAcceleration,
   laneChangeStartDist,
@@ -61,7 +62,7 @@ export class Car extends Square {
   }
 
   setMaxSpeed(speed: number) {
-    this.maxSpeed = speed;
+    this.maxSpeed = speed * idprScale;
   }
 
   setRoute(route: Road[]) {

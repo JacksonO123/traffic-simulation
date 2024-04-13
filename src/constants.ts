@@ -1,3 +1,6 @@
+export const dprScale = 2 / devicePixelRatio;
+export const idprScale = 1 / dprScale;
+
 export const laneGap = 8;
 
 export const carWidth = 50;
@@ -18,7 +21,7 @@ export const laneChangeStartDist = 125 * devicePixelRatio;
 export const minLaneChangeSteps = 200;
 const laneChangeX = carWidth;
 const laneChangeY = carHeight + laneGap;
-export const laneChangeMinDist = 2 * Math.sqrt(laneChangeX * laneChangeX + laneChangeY * laneChangeY);
+export const laneChangeMinDist = (2 * Math.sqrt(laneChangeX * laneChangeX + laneChangeY * laneChangeY)) / dprScale;
 export const laneChangeMinFrontDist = laneChangeMinDist * 3;
 
 export const minSpeed = 0.0002;
