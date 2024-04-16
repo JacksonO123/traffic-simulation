@@ -12,7 +12,7 @@ import {
   vector2,
   vertex
 } from 'simulationjsv2';
-import { StartingPoint } from '../types/traffic';
+import { SP } from '../types/traffic';
 import {
   acceleration,
   brakeCapacity,
@@ -38,7 +38,7 @@ export class Car extends Square {
 
   private roadData: RoadData;
 
-  constructor(lane: number, startPoint: StartingPoint, color?: Color, loop = false, canChangeLane = true) {
+  constructor(lane: number, startPoint: SP, color?: Color, loop = false, canChangeLane = true) {
     super(vector2(), carWidth, carHeight, color, 0, vector2(0.5, 0.5));
 
     this.maxSpeed = 0;
@@ -54,7 +54,7 @@ export class Car extends Square {
   }
 
   setLane(lane: number) {
-    this.roadData.setLane(lane, this.speed);
+    this.roadData.setLane(lane, this.speed * devicePixelRatio);
   }
 
   isChangingLanes() {
@@ -195,6 +195,10 @@ export class Car extends Square {
         moveCar(dist);
         toTravel -= dist;
 
+        if (this.roadData.atLastPoint()) {
+          break;
+        }
+
         this.roadData.nextPoint();
 
         pos = this.getPos();
@@ -221,13 +225,26 @@ export class Road {
   private lanes: number;
   private laneWidth: number;
   private speedLimit: number;
+  private twoWay: boolean;
 
-  constructor(roadSpline: Spline2d, numLanes: number, speedLimit: number, laneWidth: number) {
+  constructor(
+    roadSpline: Spline2d,
+    numLanes: number,
+    speedLimit: number,
+    laneWidth: number,
+    twoWay: boolean
+  ) {
     this.spline = roadSpline;
     this.lanes = numLanes;
     this.laneWidth = laneWidth;
     this.roadPoints = [];
     this.speedLimit = speedLimit;
+
+    if (twoWay && numLanes % 2 === 1) {
+      throw new Error('Expected even number of lanes for two way road');
+    }
+
+    this.twoWay = twoWay;
 
     this.setWidthToLanes();
     const scale = 2 / devicePixelRatio;
@@ -289,6 +306,14 @@ export class Road {
     }
   }
 
+  getLaneStartPoint(lane: number) {
+    if (this.twoWay) {
+      if (lane + 1 > this.lanes / 2) return SP.START;
+    }
+
+    return SP.END;
+  }
+
   getSpline() {
     return this.spline;
   }
@@ -307,5 +332,9 @@ export class Road {
 
   getSpeedLimit() {
     return this.speedLimit;
+  }
+
+  isTwoWay() {
+    return this.twoWay;
   }
 }

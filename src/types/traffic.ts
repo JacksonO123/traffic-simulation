@@ -1,6 +1,9 @@
 import { Car } from '../engine/road';
 
-export type StartingPoint = 'start' | 'end';
+export enum SP {
+  START,
+  END
+}
 
 export type StepContext = {
   carsInFront: Car[];
