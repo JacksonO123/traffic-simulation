@@ -1,3 +1,5 @@
+import { colorf } from 'simulationjsv2';
+
 export const dprScale = 2 / devicePixelRatio;
 export const idprScale = 1 / dprScale;
 
@@ -29,3 +31,7 @@ export const minSpeed = 0.0002;
 export const idleSpeed = 1.5;
 
 export const fps60Delay = 1000 / 60;
+
+export const stopSignSpeedLimit = 5;
+
+export const laneColor = colorf(75);
