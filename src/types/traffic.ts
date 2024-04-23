@@ -1,10 +1,12 @@
-import { Car } from '../engine/road';
+import { Road } from '../engine/road';
 
 export enum SP {
   START,
   END
 }
 
-export type StepContext = {
-  carsInFront: Car[];
+export type IntersectionTurn = {
+  from: number;
+  to: number;
+  road: Road;
 };

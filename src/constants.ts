@@ -17,9 +17,10 @@ export const brakingDistance = rawBreakingDistance + carWidth * devicePixelRatio
 export const stopDistance = rawStopDistance + carWidth * devicePixelRatio;
 
 export const laneChangeAcceleration = 0.02;
+export const maxLaneChangeSpeed = 10;
 export const acceleration = 0.1;
 
-export const laneChangeStartDist = 125 * devicePixelRatio;
+export const laneChangeStartDist = 150 * devicePixelRatio;
 export const minLaneChangeSteps = 200;
 const laneChangeX = carWidth;
 const laneChangeY = carHeight + laneGap;

@@ -2,12 +2,14 @@
 
 The goal of this project is to try to accurately simulate the behavior of traffic on highways and roadways
 
-## Currently working on: **Decision making**
+## Currently working on: **Intersections**
 
 Cars should change lanes if they are behind a slow car, or stopped in traffic
 
 ## Todo
 
+- [ ] Add various types of intersections
+- [ ] Add intersections as a part of a cars route
 - [x] Acceleration
 - [x] Lane changing
 - [x] Add speed limits for roads

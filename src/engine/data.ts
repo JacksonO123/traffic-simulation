@@ -65,12 +65,8 @@ export class RoadData {
     const isStart = this.isStartPoint();
 
     if (this.changingLanes) {
-      if (isStart) {
-        if (this.laneChangeIndex < this.laneChangePoints.length - 1) {
-          return this.laneChangePoints[this.laneChangeIndex + 1];
-        }
-      } else {
-        return this.laneChangePoints[Math.max(this.laneChangeIndex - 1, 0)];
+      if (this.laneChangeIndex < this.laneChangePoints.length - 1) {
+        return this.laneChangePoints[this.laneChangeIndex + 1];
       }
 
       return this.laneChangePoints[this.laneChangeIndex];
@@ -94,23 +90,25 @@ export class RoadData {
   }
 
   private interpolateLaneChange(numPoints: number, fromLane: number, toLane: number) {
+    const isStart = this.isStartPoint();
+
     const res: Vector2[] = [];
 
     const laneFromPoints = this.getCurrentRoad().getRoadPoints(fromLane);
     const laneToPoints = this.getCurrentRoad().getRoadPoints(toLane);
 
     for (let i = 0; i < numPoints; i++) {
-      const index = i + this.roadPointIndex;
+      const index = isStart ? i + this.roadPointIndex : this.roadPointIndex - i;
       const ratio = easeInOutQuad(i / numPoints);
 
-      const fromPoints = laneFromPoints[index];
+      const fromPoint = laneFromPoints[index];
 
-      if (fromPoints === undefined) continue;
+      if (fromPoint === undefined) continue;
 
       const vec = cloneBuf(laneToPoints[index]);
-      vec2.sub(vec, fromPoints, vec);
+      vec2.sub(vec, fromPoint, vec);
       vec2.scale(vec, ratio, vec);
-      vec2.add(vec, fromPoints, vec);
+      vec2.add(vec, fromPoint, vec);
 
       res.push(vec);
     }
@@ -127,7 +125,7 @@ export class RoadData {
 
     this.roadPoints = road.getRoadPoints(this.getAbsoluteLane(lane));
 
-    const laneDist = Math.max(minLaneChangeSteps, 150 * Math.log(currentSpeed));
+    const laneDist = Math.floor(Math.max(minLaneChangeSteps, 200 * Math.log(currentSpeed)));
 
     this.resetLaneChange(true);
     this.laneChangePoints = this.interpolateLaneChange(

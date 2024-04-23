@@ -27,9 +27,9 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
 
   const road = new Road(roadSpline, 4, 20, carHeight, true);
 
-  canvas.add(laneLines);
+  canvas.add(laneLines.getCollection());
 
-  const car = new Car(0, SP.START, color(0, 123, 255));
+  const car = new Car(0, SP.END, color(0, 123, 255));
   canvas.add(car);
   car.addToRoute(road);
   car.setMaxSpeed(8);
