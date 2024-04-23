@@ -9,7 +9,7 @@ import {
 } from 'simulationjsv2';
 import { SP } from '../types/traffic';
 import { TrafficEngine } from '../engine/engine';
-import { Car, Road, StopSignIntersection, laneLines } from '../engine/road';
+import { Car, Road, StopSignIntersection, laneLines, testLines } from '../engine/road';
 import { carHeight, laneColor } from '../constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
@@ -40,13 +40,23 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
 
   canvas.add(laneLines.getCollection());
 
-  const car = new Car(0, SP.START, color(0, 123, 255));
+  canvas.add(testLines);
+
+  const car = new Car(0, SP.END, color(0, 123, 255));
   canvas.add(car);
-
-  car.addToRoute(road);
-  car.addToRoute(intersection);
-  car.addToRoute(road2);
-
-  car.setMaxSpeed(8);
+  car.setRoute([road, intersection, road2]);
+  car.setMaxSpeed(1);
   engine.addCar(car);
+
+  let pressing = false;
+
+  document.addEventListener('keydown', () => {
+    pressing = !pressing;
+
+    if (pressing) {
+      car.setMaxSpeed(8);
+    } else {
+      car.setMaxSpeed(1);
+    }
+  });
 };

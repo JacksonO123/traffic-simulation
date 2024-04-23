@@ -1,5 +1,5 @@
 import { Vector2, cloneBuf, easeInOutQuad, vec2 } from 'simulationjsv2';
-import { Car, Road } from './road';
+import { Car, Intersection, Road } from './road';
 import { SP } from '../types/traffic';
 import { minLaneChangeSteps } from '../constants';
 import { checkLaneBounds } from '../utils/error';
@@ -14,6 +14,8 @@ export class RoadData {
 
   private roadPoints: Vector2[];
   private roadPointIndex: number;
+
+  private currentTurnRoad: Road | null;
 
   private canChangeLane: boolean;
   private changingLanes: boolean;
@@ -30,6 +32,8 @@ export class RoadData {
 
     this.roadPoints = [];
     this.roadPointIndex = 0;
+
+    this.currentTurnRoad = null;
 
     this.canChangeLane = canChangeLane;
     this.changingLanes = false;
@@ -59,6 +63,16 @@ export class RoadData {
 
   private isStartPoint() {
     return this.startPoint === SP.START;
+  }
+
+  getCurrentSpline() {
+    const road = this.getCurrentRoad();
+
+    if (road instanceof Intersection) {
+      return this.currentTurnRoad!.getSpline();
+    }
+
+    return road.getSpline();
   }
 
   getLookAtPoint() {
@@ -94,6 +108,7 @@ export class RoadData {
 
     const res: Vector2[] = [];
 
+    // TODO getLanePoints (maybe)
     const laneFromPoints = this.getCurrentRoad().getRoadPoints(fromLane);
     const laneToPoints = this.getCurrentRoad().getRoadPoints(toLane);
 
@@ -116,16 +131,17 @@ export class RoadData {
     return res;
   }
 
-  setLane(lane: number, currentSpeed: number) {
+  setLane(lane: number, dist: number) {
     if (!this.canChangeLane) return;
 
     const road = this.getCurrentRoad();
 
     checkLaneBounds(road, lane);
 
-    this.roadPoints = road.getRoadPoints(this.getAbsoluteLane(lane));
+    this.roadPoints = this.getLanePoints(road, this.getAbsoluteLane(lane));
 
-    const laneDist = Math.floor(Math.max(minLaneChangeSteps, 200 * Math.log(currentSpeed)));
+    const distScale = 1.15;
+    const laneDist = Math.floor(Math.max(minLaneChangeSteps, dist * distScale));
 
     this.resetLaneChange(true);
     this.laneChangePoints = this.interpolateLaneChange(
@@ -157,15 +173,15 @@ export class RoadData {
   }
 
   private routeUpdated() {
-    const road = this.getCurrentRoad();
+    const isStart = this.isStartPoint();
 
-    if (this.isStartPoint()) {
+    if (isStart) {
       this.roadIndex = 0;
       this.roadPointIndex = 0;
-      this.roadPoints = road.getRoadPoints(this.getAbsoluteLane());
+      this.roadPoints = this.getLanePoints(this.getCurrentRoad(), this.getAbsoluteLane());
     } else {
       this.roadIndex = this.route.length - 1;
-      this.roadPoints = road.getRoadPoints(this.getAbsoluteLane());
+      this.roadPoints = this.getLanePoints(this.getCurrentRoad(), this.getAbsoluteLane());
       this.roadPointIndex = this.roadPoints.length - 1;
     }
   }
@@ -210,11 +226,11 @@ export class RoadData {
     const isStart = this.isStartPoint();
 
     if (isStart) {
-      if (this.roadPointIndex === this.roadPoints.length - 1) {
+      if (this.roadIndex === this.route.length && this.roadPointIndex === this.roadPoints.length - 1) {
         return true;
       }
     } else {
-      if (this.roadPointIndex === 0) {
+      if (this.roadIndex === 0 && this.roadPointIndex === 0) {
         return true;
       }
     }
@@ -222,9 +238,35 @@ export class RoadData {
     return false;
   }
 
+  private getLanePoints(road: Road, lane: number) {
+    if (road instanceof Intersection) {
+      const isStart = this.isStartPoint();
+
+      const prevRoad = this.route[this.roadIndex - 1];
+      const nextRoad = this.route[this.roadIndex + 1];
+      const pathRoad = isStart ? road.getPath(prevRoad, nextRoad) : road.getPath(nextRoad, prevRoad);
+
+      if (pathRoad) {
+        this.currentTurnRoad = pathRoad;
+
+        const res = pathRoad.getRoadPoints(this.lane);
+
+        if (!isStart) {
+          res.reverse();
+        }
+
+        return res;
+      }
+      return [];
+    }
+
+    this.currentTurnRoad = null;
+
+    return road.getRoadPoints(lane);
+  }
+
   nextPoint() {
     const isStart = this.isStartPoint();
-    const road = this.getCurrentRoad();
     const lane = this.getAbsoluteLane();
 
     if (this.changingLanes) {
@@ -235,29 +277,32 @@ export class RoadData {
       }
     }
 
-    if (this.roadPointIndex >= this.roadPoints.length) {
+    if (
+      (isStart && this.roadPointIndex >= this.roadPoints.length - 1) ||
+      (!isStart && this.roadPointIndex === 0)
+    ) {
       if (isStart) {
         if (this.roadIndex < this.route.length - 1) {
           this.roadIndex++;
 
           this.roadPointIndex = 0;
-          this.roadPoints = road.getRoadPoints(lane);
+          this.roadPoints = this.getLanePoints(this.getCurrentRoad(), lane);
         } else if (this.loop) {
           this.roadIndex = 0;
 
           this.roadPointIndex = 0;
-          this.roadPoints = road.getRoadPoints(lane);
+          this.roadPoints = this.getLanePoints(this.getCurrentRoad(), lane);
         }
       } else {
         if (this.roadIndex > 0) {
           this.roadIndex--;
 
-          this.roadPoints = road.getRoadPoints(lane);
+          this.roadPoints = this.getLanePoints(this.getCurrentRoad(), lane);
           this.roadPointIndex = this.roadPoints.length - 1;
         } else if (this.loop) {
           this.roadIndex = this.route.length - 1;
 
-          this.roadPoints = road.getRoadPoints(lane);
+          this.roadPoints = this.getLanePoints(this.getCurrentRoad(), lane);
           this.roadPointIndex = this.roadPoints.length - 1;
         }
       }

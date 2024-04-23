@@ -34,9 +34,12 @@ import {
   stopSignSpeedLimit,
   laneColor,
   dprScale,
-  maxLaneChangeSpeed
+  maxLaneChangeSpeed,
+  maxLaneChangeSteps
 } from '../constants';
 import { RoadData, StepContext } from './data';
+
+export const testLines = new SceneCollection('test');
 
 class LaneLines {
   private lines: Line2d[][];
@@ -98,7 +101,16 @@ export class Car extends Square {
   }
 
   setLane(lane: number) {
-    this.roadData.setLane(lane, this.speed * devicePixelRatio);
+    let dist: number;
+    const obstacles = this.stepContext.getObstaclesAhead();
+
+    if (obstacles.length > 0) {
+      dist = distance2d(this.getPos(), obstacles[0].getPos());
+    } else {
+      dist = maxLaneChangeSteps;
+    }
+
+    this.roadData.setLane(lane, dist);
   }
 
   isChangingLanes() {
@@ -121,10 +133,10 @@ export class Car extends Square {
 
   private routeUpdated() {
     const startPoint = cloneBuf(this.roadData.getCurrentPoint());
-    vec2.add(startPoint, this.roadData.getCurrentRoad().getSpline().getPos(), startPoint);
+    vec2.add(startPoint, this.roadData.getCurrentSpline().getPos(), startPoint);
 
     const toPoint = cloneBuf(this.roadData.getLookAtPoint());
-    vec2.add(toPoint, this.roadData.getCurrentRoad().getSpline().getPos(), toPoint);
+    vec2.add(toPoint, this.roadData.getCurrentSpline().getPos(), toPoint);
 
     this.moveTo(startPoint);
 
@@ -141,10 +153,10 @@ export class Car extends Square {
     this.roadData.startAt(num);
 
     const toPos = cloneBuf(this.roadData.getCurrentPoint());
-    vec2.add(toPos, this.roadData.getCurrentRoad().getSpline().getPos(), toPos);
+    vec2.add(toPos, this.roadData.getCurrentSpline().getPos(), toPos);
 
     const toPoint = cloneBuf(this.roadData.getLookAtPoint());
-    vec2.add(toPoint, this.roadData.getCurrentRoad().getSpline().getPos(), toPoint);
+    vec2.add(toPoint, this.roadData.getCurrentSpline().getPos(), toPoint);
 
     let rotation = Math.atan2(toPoint[1] - toPos[1], toPoint[0] - toPos[0]);
 
@@ -207,7 +219,7 @@ export class Car extends Square {
     let toPos = cloneBuf(this.roadData.getCurrentPoint());
     let toLookAt = cloneBuf(this.roadData.getLookAtPoint());
 
-    const splinePos = this.roadData.getCurrentRoad().getSpline().getPos();
+    let splinePos = this.roadData.getCurrentSpline().getPos();
 
     vec2.add(toPos, splinePos, toPos);
     vec2.add(toLookAt, splinePos, toLookAt);
@@ -239,11 +251,11 @@ export class Car extends Square {
         moveCar(dist);
         toTravel -= dist;
 
-        if (this.roadData.atLastPoint()) {
-          break;
-        }
+        if (this.roadData.atLastPoint()) break;
 
         this.roadData.nextPoint();
+
+        splinePos = this.roadData.getCurrentSpline().getPos();
 
         pos = this.getPos();
         toPos = cloneBuf(this.roadData.getCurrentPoint());
@@ -254,6 +266,12 @@ export class Car extends Square {
 
         rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
         dist = distance2d(pos, toPos);
+
+        const next = cloneBuf(toPos);
+        vec2.scale(next, 1 / devicePixelRatio, next);
+
+        const line = new Line2d(vertex(pos[0], pos[1], 0, color(255)), vertex(next[0], next[1]));
+        testLines.add(line);
       }
     }
   }
@@ -407,13 +425,37 @@ export class Road {
 
 export class Intersection extends Road {
   protected roadAttachments: Map<number, Road>;
-  protected turnLanes: IntersectionTurn[];
+  protected pathLanes: IntersectionTurn[];
 
   constructor(numLanes: number, laneWidth: number, twoWay: boolean) {
     super(null, numLanes, stopSignSpeedLimit, laneWidth, twoWay);
 
     this.roadAttachments = new Map();
-    this.turnLanes = [];
+    this.pathLanes = [];
+  }
+
+  getPath(from: Road, to: Road) {
+    let fromSide = -1;
+    let toSide = -1;
+
+    Array.from(this.roadAttachments.entries()).forEach(([key, value]) => {
+      if (value === from) {
+        fromSide = key;
+      } else if (value === to) {
+        toSide = key;
+      }
+    });
+
+    if (fromSide === -1 || toSide === -1) return null;
+
+    for (let i = 0; i < this.pathLanes.length; i++) {
+      const turnLane = this.pathLanes[i];
+      if (turnLane.from === fromSide && turnLane.to === toSide) {
+        return turnLane.road;
+      }
+    }
+
+    return null;
   }
 }
 
@@ -597,27 +639,31 @@ export class StopSignIntersection extends Intersection {
     const turn7 = new Road(turnSpline7, 1, stopSignSpeedLimit, laneWidth, false);
     const turn8 = new Road(turnSpline8, 1, stopSignSpeedLimit, laneWidth, false);
 
-    const turnLanes: IntersectionTurn[] = [];
+    const pathLanes: IntersectionTurn[] = [];
 
-    const appendTurnLane = (lane: Road, from: number, to: number) => {
-      turnLanes.push({
+    const appendPathLane = (lane: Road, from: number, to: number) => {
+      pathLanes.push({
         road: lane,
         from,
         to
       });
     };
 
-    appendTurnLane(turn1, 0, 3);
-    appendTurnLane(turn2, 1, 0);
-    appendTurnLane(turn3, 2, 1);
-    appendTurnLane(turn4, 3, 2);
+    appendPathLane(road1, 0, 2);
+    appendPathLane(road2, 3, 1);
 
-    appendTurnLane(turn5, 0, 1);
-    appendTurnLane(turn6, 1, 2);
-    appendTurnLane(turn7, 2, 3);
-    appendTurnLane(turn8, 3, 0);
+    appendPathLane(turn1, 0, 3);
+    appendPathLane(turn2, 1, 0);
+    appendPathLane(turn3, 2, 1);
+    appendPathLane(turn4, 3, 2);
+
+    appendPathLane(turn5, 0, 1);
+    appendPathLane(turn6, 1, 2);
+    appendPathLane(turn7, 2, 3);
+    appendPathLane(turn8, 3, 0);
 
     this.paths = [road1, road2, turn1, turn2, turn3, turn4, turn5, turn6, turn7, turn8];
+    this.pathLanes = pathLanes;
   }
 
   addPaths(canvas: Simulation) {

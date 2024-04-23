@@ -22,6 +22,7 @@ export const acceleration = 0.1;
 
 export const laneChangeStartDist = 150 * devicePixelRatio;
 export const minLaneChangeSteps = 200;
+export const maxLaneChangeSteps = 400;
 const laneChangeX = carWidth;
 const laneChangeY = carHeight + laneGap;
 export const laneChangeMinDist =
