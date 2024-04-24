@@ -8,13 +8,31 @@ Cars should change lanes if they are behind a slow car, or stopped in traffic
 
 ## Todo
 
+- [ ] Fix set start for intersections
 - [ ] Add various types of intersections
-- [ ] Add intersections as a part of a cars route
+- [x] Add intersections as a part of a cars route
 - [x] Acceleration
 - [x] Lane changing
 - [x] Add speed limits for roads
 - [x] Decision making
   - Cars should know when to change lanes
+
+# Features in simulation
+
+- Road splines
+  - Roads are based off of spline shapes which can have any number of curves
+  - Roads can have any number of lanes, variable lane width, lane gap
+  - Roads can be specified to be bidirectional
+- Cars
+  - Cars can be specified to have variable abilities: acceleration, braking, etc
+  - Cars accelerate and decelerate to the appropriate speed in a situation
+- Routes
+  - Cars can specify a route of roads and follow it
+  - Cars can specify the direction to traverse the route
+- Intersections
+  - Intersections can control the start and end positions of splines and connecting them
+- Traffic engine
+  - Engine and cars respond to other cars on the road, slowing, changing lanes
 
 ## Technical details
 
