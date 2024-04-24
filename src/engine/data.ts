@@ -226,7 +226,7 @@ export class RoadData {
     const isStart = this.isStartPoint();
 
     if (isStart) {
-      if (this.roadIndex === this.route.length && this.roadPointIndex === this.roadPoints.length - 1) {
+      if (this.roadIndex === this.route.length - 1 && this.roadPointIndex === this.roadPoints.length - 1) {
         return true;
       }
     } else {

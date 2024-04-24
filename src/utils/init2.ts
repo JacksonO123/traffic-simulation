@@ -32,10 +32,10 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const car = new Car(1, SP.START, color(0, 123, 255));
   canvas.add(car);
   car.addToRoute(road);
-  car.setMaxSpeed(14);
+  car.setMaxSpeed(12);
   engine.addCar(car);
 
-  const carSpeed = 4;
+  const carSpeed = 1;
 
   const car2 = new Car(1, SP.START, color(255), false, false);
   canvas.add(car2);
