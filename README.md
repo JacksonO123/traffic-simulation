@@ -6,7 +6,7 @@ The goal of this project is to try to accurately simulate the behavior of traffi
 
 Cars should change lanes if they are behind a slow car, or stopped in traffic
 
-## Todo
+## Feature/Bug Todo
 
 - [ ] Fix set start for intersections
 - [ ] Add various types of intersections

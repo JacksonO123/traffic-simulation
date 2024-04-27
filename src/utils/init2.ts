@@ -11,7 +11,7 @@ import {
 import { SP } from '../types/traffic';
 import { TrafficEngine } from '../engine/engine';
 import { Car, Road, laneLines } from '../engine/road';
-import { carHeight } from '../constants';
+import { carHeight } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const roadSpline = new Spline2d(

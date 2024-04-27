@@ -18,26 +18,28 @@ import {
   vector3FromVector2,
   vertex
 } from 'simulationjsv2';
-import { IntersectionTurn, SP } from '../types/traffic';
+import { IntersectionTurn, Obstacle, SP } from '../types/traffic';
+import {
+  carHeight,
+  carWidth,
+  idprScale,
+  laneChangeStartDist,
+  laneGap,
+  laneColor,
+  dprScale,
+  maxLaneChangeSteps,
+  minStopDistance
+} from './constants';
+import { RoadData, StepContext } from './data';
 import {
   acceleration,
   brakeCapacity,
   brakingDistance,
-  carHeight,
-  carWidth,
-  idprScale,
   laneChangeAcceleration,
-  laneChangeStartDist,
-  laneGap,
-  minSpeed,
-  stopDistance,
-  stopSignSpeedLimit,
-  laneColor,
-  dprScale,
   maxLaneChangeSpeed,
-  maxLaneChangeSteps
-} from '../constants';
-import { RoadData, StepContext } from './data';
+  minSpeed,
+  stopDistance
+} from './params';
 
 export const testLines = new SceneCollection('test');
 
@@ -105,12 +107,20 @@ export class Car extends Square {
     const obstacles = this.stepContext.getObstaclesAhead();
 
     if (obstacles.length > 0) {
-      dist = distance2d(this.getPos(), obstacles[0].getPos());
+      dist = distance2d(this.getPos(), obstacles[0].point);
     } else {
       dist = maxLaneChangeSteps;
     }
 
     this.roadData.setLane(lane, dist);
+  }
+
+  getRoute() {
+    return this.roadData.getRoute();
+  }
+
+  getRoadIndex() {
+    return this.roadData.getRoadIndex();
   }
 
   isChangingLanes() {
@@ -129,6 +139,10 @@ export class Car extends Square {
   addToRoute(road: Road) {
     this.roadData.addToRoute(road);
     this.routeUpdated();
+  }
+
+  getStartPoint() {
+    return this.roadData.getStartPoint();
   }
 
   private routeUpdated() {
@@ -173,10 +187,15 @@ export class Car extends Square {
   }
 
   wantsLaneChange() {
-    const obstaclesAhead = this.stepContext.getObstaclesAhead();
+    const road = this.roadData.getCurrentRoad();
+    // TODO: test this
+    if (road.getNumLanes() === 1) return false;
 
-    if (obstaclesAhead.length > 0) {
-      const minDist = distance2d(this.getPos(), obstaclesAhead[0].getPos());
+    const obstacles = this.stepContext.getObstaclesAhead();
+
+    if (obstacles.length > 0) {
+      const minDist = distance2d(this.getPos(), obstacles[0].point);
+      // if (minDist > minIntersectionDist && minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed)
       if (minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed) return true;
 
       return false;
@@ -189,30 +208,54 @@ export class Car extends Square {
     return this.roadData.getCurrentRoad();
   }
 
+  getIntersectionState() {
+    return this.roadData.getIntersectionState();
+  }
+
+  getStopped() {
+    return this.roadData.getStopped();
+  }
+
+  setStopped(stopped: boolean) {
+    this.roadData.setStopped(stopped);
+  }
+
   private getTargetSpeed() {
     const road = this.roadData.getCurrentRoad();
     let res = Math.min(this.maxSpeed, road.getSpeedLimit());
 
-    const obstaclesAhead = this.stepContext.getObstaclesAhead();
+    const obstacles = this.stepContext.getObstaclesAhead();
 
-    if (obstaclesAhead.length > 0) {
-      const dist = distance2d(this.getPos(), obstaclesAhead[0].getPos());
-      const ratio = (dist - stopDistance) / brakingDistance;
+    if (obstacles.length > 0) {
+      const dist = distance2d(this.getPos(), obstacles[0].point);
+      const stopDist = !obstacles[0].isIntersection ? stopDistance : minStopDistance;
+      const ratio = (dist - stopDist) / brakingDistance;
       res = this.maxSpeed * ratio;
     }
 
     return res;
   }
 
-  private stepToTargetSpeed(targetSpeed: number) {
-    if (this.speed < targetSpeed) {
+  private stepToTargetSpeed(currentSpeed: number, targetSpeed: number) {
+    let res = 0;
+
+    if (currentSpeed < targetSpeed) {
       const accelAmount = this.isChangingLanes() ? laneChangeAcceleration : acceleration;
-      this.speed = Math.min(targetSpeed, this.speed + accelAmount);
+      res = Math.min(targetSpeed, currentSpeed + accelAmount);
     } else {
-      this.speed = Math.max(targetSpeed, this.speed - brakeCapacity);
+      res = Math.max(targetSpeed, currentSpeed - brakeCapacity);
     }
 
-    if (this.speed < minSpeed) this.speed = 0;
+    if (res < minSpeed) {
+      const obstacles = this.stepContext.getObstaclesAhead();
+      if (obstacles.length > 0 && obstacles[0].isIntersection) {
+        this.roadData.setStopped(true);
+      }
+
+      res = 0;
+    }
+
+    return res;
   }
 
   travel(scale: number) {
@@ -228,7 +271,7 @@ export class Car extends Square {
     let rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
 
     const targetSpeed = this.getTargetSpeed();
-    this.stepToTargetSpeed(targetSpeed);
+    this.speed = this.stepToTargetSpeed(this.speed, targetSpeed);
 
     let toTravel = this.speed * scale;
     let dist = distance2d(pos, toPos);
@@ -276,8 +319,8 @@ export class Car extends Square {
     }
   }
 
-  setObstaclesAhead(cars: Car[]) {
-    this.stepContext.setObstaclesAhead(cars);
+  setObstaclesAhead(obstacles: Obstacle[]) {
+    this.stepContext.setObstaclesAhead(obstacles);
   }
 }
 
@@ -423,12 +466,13 @@ export class Road {
   }
 }
 
-export class Intersection extends Road {
+export abstract class Intersection extends Road {
   protected roadAttachments: Map<number, Road>;
   protected pathLanes: IntersectionTurn[];
 
   constructor(numLanes: number, laneWidth: number, twoWay: boolean) {
-    super(null, numLanes, stopSignSpeedLimit, laneWidth, twoWay);
+    const speedLimit = 5;
+    super(null, numLanes, speedLimit, laneWidth, twoWay);
 
     this.roadAttachments = new Map();
     this.pathLanes = [];
@@ -456,6 +500,18 @@ export class Intersection extends Road {
     }
 
     return null;
+  }
+
+  getSide(road: Road) {
+    const entries = Array.from(this.roadAttachments.entries());
+
+    for (let i = 0; i < entries.length; i++) {
+      if (entries[i][1] === road) {
+        return entries[i][0];
+      }
+    }
+
+    return -1;
   }
 }
 
@@ -627,17 +683,19 @@ export class StopSignIntersection extends Intersection {
       ]
     );
 
-    const road1 = new Road(roadSpline1, numLanes, stopSignSpeedLimit, laneWidth, twoWay);
-    const road2 = new Road(roadSpline2, numLanes, stopSignSpeedLimit, laneWidth, twoWay);
+    const speedLimit = this.getSpeedLimit();
 
-    const turn1 = new Road(turnSpline1, 1, stopSignSpeedLimit, laneWidth, false);
-    const turn2 = new Road(turnSpline2, 1, stopSignSpeedLimit, laneWidth, false);
-    const turn3 = new Road(turnSpline3, 1, stopSignSpeedLimit, laneWidth, false);
-    const turn4 = new Road(turnSpline4, 1, stopSignSpeedLimit, laneWidth, false);
-    const turn5 = new Road(turnSpline5, 1, stopSignSpeedLimit, laneWidth, false);
-    const turn6 = new Road(turnSpline6, 1, stopSignSpeedLimit, laneWidth, false);
-    const turn7 = new Road(turnSpline7, 1, stopSignSpeedLimit, laneWidth, false);
-    const turn8 = new Road(turnSpline8, 1, stopSignSpeedLimit, laneWidth, false);
+    const road1 = new Road(roadSpline1, numLanes, speedLimit, laneWidth, twoWay);
+    const road2 = new Road(roadSpline2, numLanes, speedLimit, laneWidth, twoWay);
+
+    const turn1 = new Road(turnSpline1, 1, speedLimit, laneWidth, false);
+    const turn2 = new Road(turnSpline2, 1, speedLimit, laneWidth, false);
+    const turn3 = new Road(turnSpline3, 1, speedLimit, laneWidth, false);
+    const turn4 = new Road(turnSpline4, 1, speedLimit, laneWidth, false);
+    const turn5 = new Road(turnSpline5, 1, speedLimit, laneWidth, false);
+    const turn6 = new Road(turnSpline6, 1, speedLimit, laneWidth, false);
+    const turn7 = new Road(turnSpline7, 1, speedLimit, laneWidth, false);
+    const turn8 = new Road(turnSpline8, 1, speedLimit, laneWidth, false);
 
     const pathLanes: IntersectionTurn[] = [];
 

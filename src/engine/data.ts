@@ -1,8 +1,28 @@
 import { Vector2, cloneBuf, easeInOutQuad, vec2 } from 'simulationjsv2';
-import { Car, Intersection, Road } from './road';
-import { SP } from '../types/traffic';
-import { minLaneChangeSteps } from '../constants';
+import { Intersection, Road } from './road';
+import { Obstacle, SP } from '../types/traffic';
+import { minLaneChangeSteps } from './constants';
 import { checkLaneBounds } from '../utils/error';
+
+class IntersectionState {
+  private turnRoad: Road | null;
+
+  constructor() {
+    this.turnRoad = null;
+  }
+
+  getTurnRoad() {
+    return this.turnRoad;
+  }
+
+  setTurnRoad(road: Road) {
+    this.turnRoad = road;
+  }
+
+  clearIntersection() {
+    this.turnRoad = null;
+  }
+}
 
 export class RoadData {
   private startPoint: SP;
@@ -15,7 +35,8 @@ export class RoadData {
   private roadPoints: Vector2[];
   private roadPointIndex: number;
 
-  private currentTurnRoad: Road | null;
+  private intersectionState: IntersectionState;
+  private hasStopped: boolean;
 
   private canChangeLane: boolean;
   private changingLanes: boolean;
@@ -33,7 +54,8 @@ export class RoadData {
     this.roadPoints = [];
     this.roadPointIndex = 0;
 
-    this.currentTurnRoad = null;
+    this.intersectionState = new IntersectionState();
+    this.hasStopped = false;
 
     this.canChangeLane = canChangeLane;
     this.changingLanes = false;
@@ -65,11 +87,23 @@ export class RoadData {
     return this.startPoint === SP.START;
   }
 
+  getStartPoint() {
+    return this.startPoint;
+  }
+
+  getStopped() {
+    return this.hasStopped;
+  }
+
+  setStopped(stopped: boolean) {
+    this.hasStopped = stopped;
+  }
+
   getCurrentSpline() {
     const road = this.getCurrentRoad();
 
     if (road instanceof Intersection) {
-      return this.currentTurnRoad!.getSpline();
+      return this.intersectionState.getTurnRoad()!.getSpline();
     }
 
     return road.getSpline();
@@ -186,6 +220,14 @@ export class RoadData {
     }
   }
 
+  getRoute() {
+    return this.route;
+  }
+
+  getRoadIndex() {
+    return this.roadIndex;
+  }
+
   setRoute(route: Road[]) {
     if (route.length > 0) {
       checkLaneBounds(route[0], this.lane);
@@ -247,7 +289,7 @@ export class RoadData {
       const pathRoad = isStart ? road.getPath(prevRoad, nextRoad) : road.getPath(nextRoad, prevRoad);
 
       if (pathRoad) {
-        this.currentTurnRoad = pathRoad;
+        this.intersectionState.setTurnRoad(pathRoad);
 
         const res = pathRoad.getRoadPoints(this.lane);
 
@@ -257,12 +299,17 @@ export class RoadData {
 
         return res;
       }
+
       return [];
     }
 
-    this.currentTurnRoad = null;
+    this.intersectionState.clearIntersection();
 
     return road.getRoadPoints(lane);
+  }
+
+  getIntersectionState() {
+    return this.intersectionState;
   }
 
   nextPoint() {
@@ -321,13 +368,13 @@ export class RoadData {
 }
 
 export class StepContext {
-  private obstaclesAhead: Car[];
+  private obstaclesAhead: Obstacle[];
 
   constructor() {
     this.obstaclesAhead = [];
   }
 
-  setObstaclesAhead(obstacles: Car[]) {
+  setObstaclesAhead(obstacles: Obstacle[]) {
     this.obstaclesAhead = obstacles;
   }
 

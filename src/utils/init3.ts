@@ -10,7 +10,7 @@ import {
 } from 'simulationjsv2';
 import { TrafficEngine } from '../engine/engine';
 import { Car, Road, laneLines } from '../engine/road';
-import { carHeight } from '../constants';
+import { carHeight } from '../engine/constants';
 import { SP } from '../types/traffic';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {

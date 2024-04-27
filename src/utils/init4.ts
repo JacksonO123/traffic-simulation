@@ -10,7 +10,7 @@ import {
 import { SP } from '../types/traffic';
 import { TrafficEngine } from '../engine/engine';
 import { Car, Road, StopSignIntersection, laneLines, testLines } from '../engine/road';
-import { carHeight, laneColor } from '../constants';
+import { carHeight, laneColor } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const roadSpline = new Spline2d(

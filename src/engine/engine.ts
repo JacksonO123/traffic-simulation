@@ -1,12 +1,8 @@
 import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
-import { Car } from './road';
-import {
-  brakingDistance,
-  fps60Delay,
-  laneChangeMinDist,
-  laneChangeMinFrontDist,
-  stopDistance
-} from '../constants';
+import { Car, Intersection } from './road';
+import { fps60Delay, laneChangeMinDist, laneChangeMinFrontDist } from './constants';
+import { Obstacle, SP } from '../types/traffic';
+import { brakingDistance, stopDistance } from './params';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -26,7 +22,26 @@ export class TrafficEngine {
   }
 
   private getObstaclesAhead(car: Car) {
-    const res: Car[] = [];
+    const res: Obstacle[] = [];
+
+    const route = [...car.getRoute()];
+    const index = car.getRoadIndex();
+    const nextRoad = route[index + (car.getStartPoint() === SP.START ? 1 : -1)];
+
+    if (nextRoad instanceof Intersection) {
+      const roadAfter = route[index + (car.getStartPoint() === SP.START ? 2 : -2)];
+      const path = nextRoad.getPath(route[index], roadAfter);
+
+      if (path) {
+        const points = path.getRoadPoints(car.getLane());
+
+        if (!car.getStopped() && points.length > 0) {
+          let point = cloneBuf(points[0]);
+          vec2.add(path.getSpline().getPos(), point, point);
+          res.push({ point, isIntersection: true });
+        }
+      }
+    }
 
     for (let i = 0; i < this.cars.length; i++) {
       if (this.cars[i] === car) continue;
@@ -48,35 +63,19 @@ export class TrafficEngine {
         let insertIndex = 0;
 
         for (let j = 0; j < res.length; j++) {
-          const sortDist = distance2d(car.getPos(), res[j].getPos());
+          const sortDist = distance2d(car.getPos(), res[j].point);
           if (dist < sortDist) {
             insertIndex = j;
             break;
           }
         }
 
-        res.splice(insertIndex, 0, this.cars[i]);
+        res.splice(insertIndex, 0, { point: this.cars[i].getPos(), isIntersection: false });
       }
     }
 
     return res;
   }
-
-  // private getCarsInDistance(car: Car, dist: number) {
-  //   const res: Car[] = [];
-
-  //   for (let i = 0; i < this.cars.length; i++) {
-  //     if (car === this.cars[i]) continue;
-
-  //     const carDist = distance2d(car.getPos(), this.cars[i].getPos());
-
-  //     if (carDist < dist) {
-  //       res.push(this.cars[i]);
-  //     }
-  //   }
-
-  //   return res;
-  // }
 
   private getCarsInLane(car: Car, lane: number) {
     const res: Car[] = [];
@@ -161,9 +160,9 @@ export class TrafficEngine {
         }
       }
 
-      const nearbyCars = this.getObstaclesAhead(this.cars[i]);
+      const obstaclesAhead = this.getObstaclesAhead(this.cars[i]);
 
-      this.cars[i].setObstaclesAhead(nearbyCars);
+      this.cars[i].setObstaclesAhead(obstaclesAhead);
       this.cars[i].travel(scale);
     }
   }
