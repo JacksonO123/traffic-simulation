@@ -31,6 +31,7 @@ Cars should change lanes if they are behind a slow car, or stopped in traffic
   - Cars can specify the direction to traverse the route
 - Intersections
   - Intersections can control the start and end positions of splines and connecting them
+  - Cars with an intersection in their route will stop and start
 - Traffic engine
   - Engine and cars respond to other cars on the road, slowing, changing lanes
 
