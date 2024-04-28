@@ -28,7 +28,8 @@ import {
   laneColor,
   dprScale,
   maxLaneChangeSteps,
-  minStopDistance
+  minStopDistance,
+  minIntersectionDist
 } from './constants';
 import { RoadData, StepContext } from './data';
 import {
@@ -188,15 +189,20 @@ export class Car extends Square {
 
   wantsLaneChange() {
     const road = this.roadData.getCurrentRoad();
-    // TODO: test this
-    if (road.getNumLanes() === 1) return false;
+    let numLanes = road.getNumLanes();
+
+    if (road.isTwoWay()) {
+      numLanes /= 2;
+    }
+
+    if (numLanes === 1) return false;
 
     const obstacles = this.stepContext.getObstaclesAhead();
 
     if (obstacles.length > 0) {
       const minDist = distance2d(this.getPos(), obstacles[0].point);
-      // if (minDist > minIntersectionDist && minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed)
-      if (minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed) return true;
+      if (minDist > minIntersectionDist && minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed)
+        return true;
 
       return false;
     }
