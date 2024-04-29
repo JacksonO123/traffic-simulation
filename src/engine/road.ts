@@ -28,8 +28,7 @@ import {
   laneColor,
   dprScale,
   maxLaneChangeSteps,
-  minStopDistance,
-  minIntersectionDist
+  minStopDistance
 } from './constants';
 import { RoadData, StepContext } from './data';
 import {
@@ -101,6 +100,14 @@ export class Car extends Square {
 
   getLane() {
     return this.roadData.getLane();
+  }
+
+  getAbsoluteLane() {
+    return this.roadData.getAbsoluteLane();
+  }
+
+  isStartPoint() {
+    return this.roadData.isStartPoint();
   }
 
   setLane(lane: number) {
@@ -201,8 +208,9 @@ export class Car extends Square {
 
     if (obstacles.length > 0) {
       const minDist = distance2d(this.getPos(), obstacles[0].point);
-      if (minDist > minIntersectionDist && minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed)
-        return true;
+      if (minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed) return true;
+      // if (minDist > minIntersectionDist && minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed)
+      //   return true;
 
       return false;
     }
@@ -338,13 +346,15 @@ export class Road {
   private speedLimit: number;
   private twoWay: boolean;
   private laneLineIndex: number;
+  private isTurnLane: boolean;
 
   constructor(
     roadSpline: Spline2d | null,
     numLanes: number,
     speedLimit: number,
     laneWidth: number,
-    twoWay: boolean
+    twoWay: boolean,
+    isTurnLane = false
   ) {
     this.spline = roadSpline || new Spline2d(vertex(), []);
     this.lanes = numLanes;
@@ -352,6 +362,7 @@ export class Road {
     this.roadPoints = [];
     this.speedLimit = speedLimit;
     this.laneLineIndex = -1;
+    this.isTurnLane = isTurnLane;
 
     if (twoWay && numLanes % 2 === 1) {
       throw new Error('Expected even number of lanes for two way road');
@@ -362,6 +373,10 @@ export class Road {
     this.setWidthToLanes();
 
     this.updateRoadPoints(this.spline.getLength() * dprScale);
+  }
+
+  getIsTurnLane() {
+    return this.isTurnLane;
   }
 
   private createLaneLine(points: Vector2[]) {
@@ -526,7 +541,7 @@ export class StopSignIntersection extends Intersection {
   private intersectionLength: number;
   private paths: Road[];
 
-  private xScales = [0, 0.5, 0, 0.5];
+  private xScales = [0, 0.5, 0, -0.5];
   private xControlSigns = [0, 1, 0, -1];
   private yScales = [0.5, 0, -0.5, 0];
   private yControlSigns = [1, 0, -1, 0];
@@ -694,14 +709,14 @@ export class StopSignIntersection extends Intersection {
     const road1 = new Road(roadSpline1, numLanes, speedLimit, laneWidth, twoWay);
     const road2 = new Road(roadSpline2, numLanes, speedLimit, laneWidth, twoWay);
 
-    const turn1 = new Road(turnSpline1, 1, speedLimit, laneWidth, false);
-    const turn2 = new Road(turnSpline2, 1, speedLimit, laneWidth, false);
-    const turn3 = new Road(turnSpline3, 1, speedLimit, laneWidth, false);
-    const turn4 = new Road(turnSpline4, 1, speedLimit, laneWidth, false);
-    const turn5 = new Road(turnSpline5, 1, speedLimit, laneWidth, false);
-    const turn6 = new Road(turnSpline6, 1, speedLimit, laneWidth, false);
-    const turn7 = new Road(turnSpline7, 1, speedLimit, laneWidth, false);
-    const turn8 = new Road(turnSpline8, 1, speedLimit, laneWidth, false);
+    const turn1 = new Road(turnSpline1, 1, speedLimit, laneWidth, false, true);
+    const turn2 = new Road(turnSpline2, 1, speedLimit, laneWidth, false, true);
+    const turn3 = new Road(turnSpline3, 1, speedLimit, laneWidth, false, true);
+    const turn4 = new Road(turnSpline4, 1, speedLimit, laneWidth, false, true);
+    const turn5 = new Road(turnSpline5, 1, speedLimit, laneWidth, false, true);
+    const turn6 = new Road(turnSpline6, 1, speedLimit, laneWidth, false, true);
+    const turn7 = new Road(turnSpline7, 1, speedLimit, laneWidth, false, true);
+    const turn8 = new Road(turnSpline8, 1, speedLimit, laneWidth, false, true);
 
     const pathLanes: IntersectionTurn[] = [];
 
@@ -713,8 +728,10 @@ export class StopSignIntersection extends Intersection {
       });
     };
 
-    appendPathLane(road1, 0, 2);
-    appendPathLane(road2, 3, 1);
+    appendPathLane(road1, 3, 1);
+    appendPathLane(road1, 1, 3);
+    appendPathLane(road2, 0, 2);
+    appendPathLane(road2, 2, 0);
 
     appendPathLane(turn1, 0, 3);
     appendPathLane(turn2, 1, 0);

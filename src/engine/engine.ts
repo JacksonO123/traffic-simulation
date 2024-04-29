@@ -33,10 +33,14 @@ export class TrafficEngine {
       const path = nextRoad.getPath(route[index], roadAfter);
 
       if (path) {
-        const points = path.getRoadPoints(car.getLane());
+        const points = path.getRoadPoints(car.getAbsoluteLane());
 
         if (!car.getStopped() && points.length > 0) {
-          let point = cloneBuf(points[0]);
+          let index = 0;
+
+          if (!path.getIsTurnLane() && !car.isStartPoint()) index = points.length - 1;
+
+          let point = cloneBuf(points[index]);
           vec2.add(path.getSpline().getPos(), point, point);
           res.push({ point, isIntersection: true });
         }

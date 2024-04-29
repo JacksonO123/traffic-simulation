@@ -83,7 +83,7 @@ export class RoadData {
     return this.roadPoints[this.roadPointIndex];
   }
 
-  private isStartPoint() {
+  isStartPoint() {
     return this.startPoint === SP.START;
   }
 
@@ -187,7 +187,7 @@ export class RoadData {
     this.lane = this.getAbsoluteLane(lane);
   }
 
-  private getAbsoluteLane(lane?: number) {
+  getAbsoluteLane(lane?: number) {
     if (this.route.length === 0) return this.lane;
 
     const road = this.getCurrentRoad();
@@ -291,13 +291,17 @@ export class RoadData {
       if (pathRoad) {
         this.intersectionState.setTurnRoad(pathRoad);
 
-        const res = pathRoad.getRoadPoints(this.lane);
+        if (pathRoad.getIsTurnLane()) {
+          const res = pathRoad.getRoadPoints(0);
 
-        if (!isStart) {
-          res.reverse();
+          if (!isStart) {
+            res.reverse();
+          }
+
+          return res;
         }
 
-        return res;
+        return pathRoad.getRoadPoints(lane);
       }
 
       return [];
