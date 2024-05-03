@@ -1,5 +1,5 @@
 import { Vector2, cloneBuf, easeInOutQuad, vec2 } from 'simulationjsv2';
-import { Intersection, Road } from './road';
+import { Intersection, Road, TurnLane } from './road';
 import { Obstacle, SP } from '../types/traffic';
 import { minLaneChangeSteps } from './constants';
 import { checkLaneBounds } from '../utils/error';
@@ -69,6 +69,32 @@ export class RoadData {
 
   isChangingLanes() {
     return this.changingLanes;
+  }
+
+  getTargetLane() {
+    if (this.isChangingLanes()) return this.lane;
+
+    const isStart = this.isStartPoint();
+    const nextRoad = this.route[this.roadIndex + (isStart ? 1 : -1)];
+
+    if (nextRoad instanceof Intersection) {
+      const afterRoad = this.route[this.roadIndex + (isStart ? 2 : -2)];
+      const path = nextRoad.getPath(this.getCurrentRoad(), afterRoad);
+
+      if (path && path instanceof TurnLane) {
+        let toLane = path.getLane();
+        const diff = Math.abs(this.lane - toLane);
+
+        if (diff > 1) {
+          if (toLane > this.lane) toLane = this.lane + 1;
+          else toLane = this.lane - 1;
+        }
+
+        return toLane;
+      }
+    }
+
+    return this.lane;
   }
 
   getCurrentRoad() {
@@ -291,17 +317,10 @@ export class RoadData {
       if (pathRoad) {
         this.intersectionState.setTurnRoad(pathRoad);
 
-        if (pathRoad.getIsTurnLane()) {
-          const res = pathRoad.getRoadPoints(0);
+        const res =
+          pathRoad instanceof TurnLane ? pathRoad.getRoadPoints(0, isStart) : pathRoad.getRoadPoints(0);
 
-          if (!isStart) {
-            res.reverse();
-          }
-
-          return res;
-        }
-
-        return pathRoad.getRoadPoints(lane);
+        return res;
       }
 
       return [];

@@ -30,19 +30,18 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   canvas.add(roadSpline);
   canvas.add(roadSpline2);
 
-  const road = new Road(roadSpline, 2, 20, carHeight, true);
-  const road2 = new Road(roadSpline2, 2, 20, carHeight, true);
-  const intersection = new StopSignIntersection(vector2(500, -600), 2, carHeight, true);
+  const road = new Road(roadSpline, 3, 20, carHeight, false);
+  const road2 = new Road(roadSpline2, 3, 20, carHeight, false);
+  const intersection = new StopSignIntersection(vector2(500, -600), 3, carHeight, false);
 
   intersection.addPaths(canvas);
-  // intersection.connectRoadEnd(road, 0, 200);
-  intersection.connectRoadEnd(road, 3, 200);
+  intersection.connectRoadEnd(road, 0, 200);
   intersection.connectRoadStart(road2, 1);
 
   canvas.add(laneLines.getCollection());
   canvas.add(testLines);
 
-  const car = new Car(0, SP.END, color(0, 123, 255));
+  const car = new Car(2, SP.START, color(0, 123, 255));
   canvas.add(car);
   car.setRoute([road, intersection, road2]);
   car.setMaxSpeed(1);

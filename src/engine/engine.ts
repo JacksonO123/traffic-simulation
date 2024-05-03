@@ -1,5 +1,5 @@
 import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
-import { Car, Intersection } from './road';
+import { Car, Intersection, TurnLane } from './road';
 import { fps60Delay, laneChangeMinDist, laneChangeMinFrontDist } from './constants';
 import { Obstacle, SP } from '../types/traffic';
 import { brakingDistance, stopDistance } from './params';
@@ -38,7 +38,7 @@ export class TrafficEngine {
         if (!car.getStopped() && points.length > 0) {
           let index = 0;
 
-          if (!path.getIsTurnLane() && !car.isStartPoint()) index = points.length - 1;
+          if (!(path instanceof TurnLane) && !car.isStartPoint()) index = points.length - 1;
 
           let point = cloneBuf(points[index]);
           vec2.add(path.getSpline().getPos(), point, point);
@@ -156,8 +156,18 @@ export class TrafficEngine {
 
   tick(scale: number) {
     for (let i = 0; i < this.cars.length; i++) {
-      if (this.cars[i].wantsLaneChange()) {
-        const toLane = this.getLaneChange(this.cars[i]);
+      const [wantsChange, targetLane] = this.cars[i].wantsLaneChange();
+      if (wantsChange) {
+        let toLane: number = -1;
+
+        if (targetLane === null) {
+          toLane = this.getLaneChange(this.cars[i]);
+        } else {
+          const [canChange] = this.checkLaneAvailability(this.cars[i], targetLane);
+          if (canChange) {
+            toLane = targetLane;
+          }
+        }
 
         if (toLane > -1) {
           this.cars[i].setLane(toLane);

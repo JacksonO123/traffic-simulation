@@ -13,3 +13,4 @@ export const maxLaneChangeSpeed = 10;
 export const acceleration = 0.1;
 export const minSpeed = 0.02;
 export const idleSpeed = 1.5;
+export const intersectionTurnSpeed = 4;
