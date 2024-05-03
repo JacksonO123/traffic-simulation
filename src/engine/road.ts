@@ -499,10 +499,10 @@ export class TurnLane extends Road {
     this.connectedLane = lane;
   }
 
-  getRoadPoints(_: number, isStart = false) {
+  getRoadPoints(_: number, isStart = true) {
     const res = super.getRoadPoints(0);
 
-    if (!isStart && !this.isTwoWay()) {
+    if (isStart && !this.isTwoWay()) {
       res.reverse();
     }
 
