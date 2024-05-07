@@ -33,12 +33,15 @@ export class TrafficEngine {
       const path = nextRoad.getPath(route[index], roadAfter);
 
       if (path) {
-        const points = path.getRoadPoints(car.getAbsoluteLane());
+        const points =
+          path instanceof TurnLane
+            ? path.getRoadPoints(car.getAbsoluteLane(), car.isStartPoint())
+            : path.getRoadPoints(car.getAbsoluteLane());
 
         if (!car.getStopped() && points.length > 0) {
           let index = 0;
 
-          if (!(path instanceof TurnLane) && !car.isStartPoint()) index = points.length - 1;
+          if (!car.isStartPoint()) index = points.length - 1;
 
           let point = cloneBuf(points[index]);
           vec2.add(path.getSpline().getPos(), point, point);
@@ -157,6 +160,7 @@ export class TrafficEngine {
   tick(scale: number) {
     for (let i = 0; i < this.cars.length; i++) {
       const [wantsChange, targetLane] = this.cars[i].wantsLaneChange();
+
       if (wantsChange) {
         let toLane: number = -1;
 

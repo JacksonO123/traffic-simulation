@@ -210,7 +210,7 @@ export class RoadData {
       this.getAbsoluteLane(lane)
     );
 
-    this.lane = this.getAbsoluteLane(lane);
+    this.lane = lane;
   }
 
   getAbsoluteLane(lane?: number) {

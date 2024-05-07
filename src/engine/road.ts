@@ -499,10 +499,10 @@ export class TurnLane extends Road {
     this.connectedLane = lane;
   }
 
-  getRoadPoints(_: number, isStart = true) {
-    const res = super.getRoadPoints(0);
+  getRoadPoints(_: number, isStart = false) {
+    const res = [...super.getRoadPoints(0)];
 
-    if (isStart && !this.isTwoWay()) {
+    if (!isStart) {
       res.reverse();
     }
 
@@ -579,7 +579,8 @@ export class StopSignIntersection extends Intersection {
     this.pos = vector3FromVector2(pos);
     this.intersectionLength = laneWidth * numLanes + laneGap * (numLanes + 1);
 
-    const turnControlScale = 14;
+    const smallTurnScale = 14;
+    const turnControlScale = smallTurnScale * (numLanes / 2);
     const laneScale = (numLanes - 1) / 2;
 
     const roadSpline1 = new Spline2d(
@@ -602,8 +603,8 @@ export class StopSignIntersection extends Intersection {
       [
         splinePoint2d(
           vertex(-laneWidth / 2 - laneGap, -laneWidth / 2 - laneGap),
-          vector2(0, -turnControlScale),
-          vector2(turnControlScale)
+          vector2(0, -smallTurnScale),
+          vector2(smallTurnScale)
         )
       ]
     );
@@ -618,8 +619,8 @@ export class StopSignIntersection extends Intersection {
       [
         splinePoint2d(
           vertex(-laneWidth / 2 - laneGap, laneWidth / 2 + laneGap),
-          vector2(-turnControlScale),
-          vector2(0, -turnControlScale)
+          vector2(-smallTurnScale),
+          vector2(0, -smallTurnScale)
         )
       ]
     );
@@ -634,8 +635,8 @@ export class StopSignIntersection extends Intersection {
       [
         splinePoint2d(
           vertex(laneWidth / 2 + laneGap, laneWidth / 2 + laneGap),
-          vector2(0, turnControlScale),
-          vector2(-turnControlScale)
+          vector2(0, smallTurnScale),
+          vector2(-smallTurnScale)
         )
       ]
     );
@@ -650,8 +651,8 @@ export class StopSignIntersection extends Intersection {
       [
         splinePoint2d(
           vertex(laneWidth / 2 + laneGap, -laneWidth / 2 - laneGap),
-          vector2(turnControlScale),
-          vector2(0, turnControlScale)
+          vector2(smallTurnScale),
+          vector2(0, smallTurnScale)
         )
       ]
     );
