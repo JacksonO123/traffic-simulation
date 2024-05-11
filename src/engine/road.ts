@@ -18,7 +18,7 @@ import {
   vector3FromVector2,
   vertex
 } from 'simulationjsv2';
-import { IntersectionTurn, Obstacle, SP } from '../types/traffic';
+import { IntersectionTurn, LaneObstacle, Obstacle, SP } from '../types/traffic';
 import {
   carHeight,
   carWidth,
@@ -29,7 +29,9 @@ import {
   dprScale,
   maxLaneChangeSteps,
   minStopDistance,
-  minIntersectionDist
+  minIntersectionDist,
+  mergeSlowDownScale,
+  mergeSpeedUpScale
 } from './constants';
 import { RoadData, StepContext } from './data';
 import {
@@ -122,7 +124,16 @@ export class Car extends Square {
       dist = maxLaneChangeSteps;
     }
 
+    this.stepContext.clearLaneObstacle();
     this.roadData.setLane(lane, dist);
+  }
+
+  inIntersection() {
+    return this.roadData.inIntersection();
+  }
+
+  getChangingFrom() {
+    return this.roadData.getChangingFrom();
   }
 
   getRoute() {
@@ -207,7 +218,10 @@ export class Car extends Square {
     if (numLanes === 1) return [false, null];
 
     const targetLane = this.roadData.getTargetLane();
-    if (targetLane !== this.getLane()) {
+
+    if (targetLane === this.getLane()) return [false, null];
+
+    if (targetLane !== -1) {
       return [true, targetLane];
     }
 
@@ -236,17 +250,32 @@ export class Car extends Square {
     return this.roadData.getIntersectionState();
   }
 
-  getStopped() {
+  getSpeed() {
+    return this.speed;
+  }
+
+  /**
+   * If car is stationary
+   */
+  isStopped() {
+    return this.getSpeed() < minSpeed;
+  }
+
+  /**
+   * For external state tracking
+   * is true if car has stopped in the past and state has not been cleared
+   */
+  hasStopped() {
     return this.roadData.getStopped();
   }
 
-  setStopped(stopped: boolean) {
-    this.roadData.setStopped(stopped);
+  setHasStopped() {
+    this.roadData.setHasStopped();
   }
 
   private getTargetSpeed() {
     const road = this.roadData.getCurrentRoad();
-    let res = Math.min(this.maxSpeed, road.getSpeedLimit());
+    let targetSpeed = Math.min(this.maxSpeed, road.getSpeedLimit());
 
     const obstacles = this.stepContext.getObstaclesAhead();
 
@@ -254,10 +283,18 @@ export class Car extends Square {
       const dist = distance2d(this.getPos(), obstacles[0].point);
       const stopDist = !obstacles[0].isIntersection ? stopDistance : minStopDistance;
       const ratio = (dist - stopDist) / brakingDistance;
-      res = this.maxSpeed * ratio;
+      targetSpeed = this.maxSpeed * ratio;
     }
 
-    return res;
+    const laneObstacle = this.stepContext.getLaneObstacle();
+    if (laneObstacle) {
+      let newTarget = laneObstacle.obstacle.getSpeed();
+      newTarget *= laneObstacle.behind ? mergeSlowDownScale : mergeSpeedUpScale;
+
+      if (newTarget < targetSpeed || obstacles.length === 0) return newTarget;
+    }
+
+    return targetSpeed;
   }
 
   private stepToTargetSpeed(currentSpeed: number, targetSpeed: number) {
@@ -273,7 +310,7 @@ export class Car extends Square {
     if (res < minSpeed) {
       const obstacles = this.stepContext.getObstaclesAhead();
       if (obstacles.length > 0 && obstacles[0].isIntersection) {
-        this.roadData.setStopped(true);
+        this.roadData.setHasStopped();
       }
 
       res = 0;
@@ -346,6 +383,13 @@ export class Car extends Square {
   setObstaclesAhead(obstacles: Obstacle[]) {
     this.stepContext.setObstaclesAhead(obstacles);
   }
+
+  /**
+   * You are expected to clear lane obstacle later in time if called
+   */
+  setLaneObstacle(obstacle: LaneObstacle) {
+    this.stepContext.setLaneObstacle(obstacle);
+  }
 }
 
 export class Road {
@@ -380,6 +424,14 @@ export class Road {
     this.setWidthToLanes();
 
     this.updateRoadPoints(this.spline.getLength() * dprScale);
+  }
+
+  laneInRange(lane: number) {
+    let maxNum = this.lanes;
+
+    if (this.isTwoWay()) maxNum /= 2;
+
+    return lane >= 0 && lane < maxNum;
   }
 
   private createLaneLine(points: Vector2[]) {

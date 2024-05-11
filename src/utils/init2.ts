@@ -23,8 +23,6 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
     100
   );
 
-  roadSpline.setWireframe(true);
-
   canvas.add(roadSpline);
 
   const road = new Road(roadSpline, 3, 15, carHeight, false);

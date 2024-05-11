@@ -1,8 +1,9 @@
 import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
 import { Car, Intersection, TurnLane } from './road';
-import { fps60Delay, laneChangeMinDist, laneChangeMinFrontDist } from './constants';
-import { Obstacle, SP } from '../types/traffic';
+import { fps60Delay, laneChangeMinDist, laneChangeMinFrontDist, speedUpCutoffRotation } from './constants';
+import { LaneObstacle, Obstacle, SP } from '../types/traffic';
 import { brakingDistance, stopDistance } from './params';
+import { vec2Angle } from '../utils/utils';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -24,6 +25,45 @@ export class TrafficEngine {
   private getObstaclesAhead(car: Car) {
     const res: Obstacle[] = [];
 
+    for (let i = 0; i < this.cars.length; i++) {
+      if (this.cars[i] === car) continue;
+
+      if (this.cars[i].getLane() !== car.getLane()) {
+        // TODO: fix this
+        if (this.cars[i].isChangingLanes()) {
+          if (this.cars[i].getChangingFrom() !== car.getLane()) continue;
+        } else continue;
+
+        continue;
+      }
+
+      const dist = distance2d(car.getPos(), this.cars[i].getPos());
+
+      if (dist > brakingDistance + stopDistance) {
+        continue;
+      }
+
+      const directionVec = car.getDirectionVector();
+      const posVec = cloneBuf(this.cars[i].getPos());
+      vec2.sub(posVec, car.getPos(), posVec);
+
+      const dot = vec2.dot(directionVec, posVec);
+
+      if (dot < 0) continue;
+
+      let insertIndex = 0;
+
+      for (let j = 0; j < res.length; j++) {
+        const sortDist = distance2d(car.getPos(), res[j].point);
+        if (dist < sortDist) {
+          insertIndex = j;
+          break;
+        }
+      }
+
+      res.splice(insertIndex, 0, { point: this.cars[i].getPos(), isIntersection: false });
+    }
+
     const route = [...car.getRoute()];
     const index = car.getRoadIndex();
     const nextRoad = route[index + (car.getStartPoint() === SP.START ? 1 : -1)];
@@ -38,46 +78,20 @@ export class TrafficEngine {
             ? path.getRoadPoints(car.getAbsoluteLane(), car.isStartPoint())
             : path.getRoadPoints(car.getAbsoluteLane());
 
-        if (!car.getStopped() && points.length > 0) {
+        if (points.length > 0) {
           let index = 0;
 
           if (!car.isStartPoint()) index = points.length - 1;
 
           let point = cloneBuf(points[index]);
           vec2.add(path.getSpline().getPos(), point, point);
-          res.push({ point, isIntersection: true });
-        }
-      }
-    }
 
-    for (let i = 0; i < this.cars.length; i++) {
-      if (this.cars[i] === car) continue;
-      if (this.cars[i].getLane() !== car.getLane()) continue;
+          const dist = distance2d(car.getPos(), point);
 
-      const dist = distance2d(car.getPos(), this.cars[i].getPos());
-
-      if (dist > brakingDistance + stopDistance) {
-        continue;
-      }
-
-      const directionVec = car.getDirectionVector();
-      const posVec = cloneBuf(this.cars[i].getPos());
-      vec2.sub(posVec, car.getPos(), posVec);
-
-      const dot = vec2.dot(directionVec, posVec);
-
-      if (dot > 0) {
-        let insertIndex = 0;
-
-        for (let j = 0; j < res.length; j++) {
-          const sortDist = distance2d(car.getPos(), res[j].point);
-          if (dist < sortDist) {
-            insertIndex = j;
-            break;
+          if (!car.hasStopped() && (res.length === 0 || dist < distance2d(car.getPos(), res[0].point))) {
+            res.unshift({ point, isIntersection: true });
           }
         }
-
-        res.splice(insertIndex, 0, { point: this.cars[i].getPos(), isIntersection: false });
       }
     }
 
@@ -97,7 +111,11 @@ export class TrafficEngine {
     return res;
   }
 
-  private checkLaneAvailability(car: Car, toLane: number): [boolean, number] {
+  private checkLaneAvailability(car: Car, toLane: number): [boolean, number, LaneObstacle | null] {
+    const road = car.getCurrentRoad();
+
+    if (!road.laneInRange(toLane)) return [false, 0, null];
+
     const pos = car.getPos();
     const cars = this.getCarsInLane(car, toLane).sort((a, b) => {
       const distA = distance2d(pos, a.getPos());
@@ -107,7 +125,7 @@ export class TrafficEngine {
     });
 
     if (cars.length === 0) {
-      return [true, Infinity];
+      return [true, Infinity, null];
     }
 
     const dist = distance2d(car.getPos(), cars[0].getPos());
@@ -115,18 +133,22 @@ export class TrafficEngine {
     const posVec = cloneBuf(cars[0].getPos());
     vec2.sub(posVec, car.getPos(), posVec);
     const dot = vec2.dot(directionVec, posVec);
+    const angle = vec2Angle(directionVec, posVec) - Math.PI / 2;
+    const behind = angle < speedUpCutoffRotation;
+
+    const obstaleInfo = { obstacle: cars[0], behind };
 
     if (dot > 0) {
       if (dist <= laneChangeMinFrontDist) {
-        return [false, dist];
+        return [false, dist, obstaleInfo];
       }
     } else {
       if (dist <= laneChangeMinDist) {
-        return [false, dist];
+        return [false, dist, obstaleInfo];
       }
     }
 
-    return [true, dist];
+    return [true, dist, null];
   }
 
   private getLaneChange(car: Car) {
@@ -159,22 +181,27 @@ export class TrafficEngine {
 
   tick(scale: number) {
     for (let i = 0; i < this.cars.length; i++) {
-      const [wantsChange, targetLane] = this.cars[i].wantsLaneChange();
+      if (!this.cars[i].inIntersection()) {
+        const [wantsChange, targetLane] = this.cars[i].wantsLaneChange();
 
-      if (wantsChange) {
-        let toLane: number = -1;
+        if (wantsChange) {
+          let toLane: number = -1;
 
-        if (targetLane === null) {
-          toLane = this.getLaneChange(this.cars[i]);
-        } else {
-          const [canChange] = this.checkLaneAvailability(this.cars[i], targetLane);
-          if (canChange) {
-            toLane = targetLane;
+          if (targetLane === null) {
+            toLane = this.getLaneChange(this.cars[i]);
+          } else {
+            const [canChange, _, obstacle] = this.checkLaneAvailability(this.cars[i], targetLane);
+
+            if (canChange) {
+              toLane = targetLane;
+            } else if (obstacle !== null) {
+              this.cars[i].setLaneObstacle(obstacle);
+            }
           }
-        }
 
-        if (toLane > -1) {
-          this.cars[i].setLane(toLane);
+          if (toLane > -1) {
+            this.cars[i].setLane(toLane);
+          }
         }
       }
 

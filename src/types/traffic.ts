@@ -1,5 +1,5 @@
 import { Vector2 } from 'simulationjsv2';
-import { Road } from '../engine/road';
+import { Car, Road } from '../engine/road';
 
 export enum SP {
   START,
@@ -15,4 +15,9 @@ export type IntersectionTurn = {
 export type Obstacle = {
   point: Vector2;
   isIntersection: boolean;
+};
+
+export type LaneObstacle = {
+  obstacle: Car;
+  behind: boolean;
 };

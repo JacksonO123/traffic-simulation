@@ -23,4 +23,10 @@ export const laneChangeMinFrontDist = laneChangeMinDist * 3;
 // distance from intersection when cars cannot change lanes
 export const minIntersectionDist = 300;
 
+// at what angle should the car speed up or slow down
+// for changing lanes when another car is in the target lane
+export const speedUpCutoffRotation = Math.PI / 3;
+export const mergeSlowDownScale = 0.8;
+export const mergeSpeedUpScale = 1.2;
+
 export const laneColor = colorf(75);
