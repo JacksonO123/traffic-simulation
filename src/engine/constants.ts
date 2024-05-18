@@ -17,16 +17,16 @@ export const minLaneChangeSteps = 200;
 export const maxLaneChangeSteps = 400;
 const laneChangeX = carWidth;
 const laneChangeY = carHeight + laneGap;
-export const laneChangeMinDist =
-  (2 * Math.sqrt(laneChangeX * laneChangeX + laneChangeY * laneChangeY)) / dprScale;
-export const laneChangeMinFrontDist = laneChangeMinDist * 3;
+export const laneChangeMinDist = Math.sqrt(laneChangeX * laneChangeX + laneChangeY * laneChangeY) / dprScale;
+// export const laneChangeMinDist = 0;
+export const laneChangeMinFrontDist = laneChangeMinDist * 2;
 // distance from intersection when cars cannot change lanes
 export const minIntersectionDist = 300;
 
 // at what angle should the car speed up or slow down
 // for changing lanes when another car is in the target lane
-export const speedUpCutoffRotation = Math.PI / 3;
-export const mergeSlowDownScale = 0.8;
-export const mergeSpeedUpScale = 1.2;
+export const speedUpCutoffRotation = Math.PI / 4;
+export const mergeSlowDownScale = 0.9;
+export const mergeSpeedUpScale = 1.25;
 
 export const laneColor = colorf(75);

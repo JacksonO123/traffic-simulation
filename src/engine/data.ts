@@ -212,6 +212,8 @@ export class RoadData {
   }
 
   setLane(lane: number, dist: number) {
+    console.log('setting lane', lane);
+
     if (!this.canChangeLane) return;
 
     const road = this.getCurrentRoad();
@@ -340,7 +342,9 @@ export class RoadData {
         this.intersectionState.setTurnRoad(pathRoad);
 
         const res =
-          pathRoad instanceof TurnLane ? pathRoad.getRoadPoints(0, isStart) : pathRoad.getRoadPoints(0);
+          pathRoad instanceof TurnLane
+            ? pathRoad.getRoadPoints(0, isStart)
+            : pathRoad.getRoadPoints(this.getAbsoluteLane(this.lane));
 
         return res;
       }

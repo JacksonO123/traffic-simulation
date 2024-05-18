@@ -29,10 +29,11 @@ export class TrafficEngine {
       if (this.cars[i] === car) continue;
 
       if (this.cars[i].getLane() !== car.getLane()) {
-        // TODO: fix this
         if (this.cars[i].isChangingLanes()) {
           if (this.cars[i].getChangingFrom() !== car.getLane()) continue;
-        } else continue;
+        } else {
+          continue;
+        }
 
         continue;
       }
@@ -88,7 +89,11 @@ export class TrafficEngine {
 
           const dist = distance2d(car.getPos(), point);
 
-          if (!car.hasStopped() && (res.length === 0 || dist < distance2d(car.getPos(), res[0].point))) {
+          if (
+            !car.hasStopped() &&
+            dist <= brakingDistance + stopDistance &&
+            (res.length === 0 || dist < distance2d(car.getPos(), res[0].point))
+          ) {
             res.unshift({ point, isIntersection: true });
           }
         }
@@ -130,10 +135,10 @@ export class TrafficEngine {
 
     const dist = distance2d(car.getPos(), cars[0].getPos());
     const directionVec = car.getDirectionVector();
-    const posVec = cloneBuf(cars[0].getPos());
-    vec2.sub(posVec, car.getPos(), posVec);
+    const posVec = cloneBuf(car.getPos());
+    vec2.sub(posVec, cars[0].getPos(), posVec);
     const dot = vec2.dot(directionVec, posVec);
-    const angle = vec2Angle(directionVec, posVec) - Math.PI / 2;
+    const angle = Math.abs(vec2Angle(directionVec, posVec) - Math.PI / 2);
     const behind = angle < speedUpCutoffRotation;
 
     const obstaleInfo = { obstacle: cars[0], behind };

@@ -16,7 +16,12 @@ import {
   vector2,
   vector2FromVector3,
   vector3FromVector2,
-  vertex
+  vertex,
+  easeInExpo,
+  easeOutExpo,
+  easeInQuart,
+  easeInQuad,
+  easeOutQuad
 } from 'simulationjsv2';
 import { IntersectionTurn, LaneObstacle, Obstacle, SP } from '../types/traffic';
 import {
@@ -44,6 +49,7 @@ import {
   minSpeed,
   stopDistance
 } from './params';
+import { interpolateColors } from '../../../simulationjs/v2/dist/internalUtils';
 
 export const testLines = new SceneCollection('test');
 
@@ -78,7 +84,7 @@ class LaneLines {
 
   private updateCollection() {
     const newScene = this.lines.flat();
-    this.lineCollection.setScene(newScene);
+    this.lineCollection.setSceneObjects(newScene);
   }
 }
 
@@ -218,9 +224,7 @@ export class Car extends Square {
     if (numLanes === 1) return [false, null];
 
     const targetLane = this.roadData.getTargetLane();
-
     if (targetLane === this.getLane()) return [false, null];
-
     if (targetLane !== -1) {
       return [true, targetLane];
     }
@@ -282,7 +286,7 @@ export class Car extends Square {
     if (obstacles.length > 0) {
       const dist = distance2d(this.getPos(), obstacles[0].point);
       const stopDist = !obstacles[0].isIntersection ? stopDistance : minStopDistance;
-      const ratio = (dist - stopDist) / brakingDistance;
+      let ratio = easeOutQuad((dist - stopDist) / brakingDistance);
       targetSpeed = this.maxSpeed * ratio;
     }
 
@@ -291,7 +295,7 @@ export class Car extends Square {
       let newTarget = laneObstacle.obstacle.getSpeed();
       newTarget *= laneObstacle.behind ? mergeSlowDownScale : mergeSpeedUpScale;
 
-      if (newTarget < targetSpeed || obstacles.length === 0) return newTarget;
+      if (obstacles.length === 0) targetSpeed = newTarget;
     }
 
     return targetSpeed;
@@ -305,15 +309,15 @@ export class Car extends Square {
       res = Math.min(targetSpeed, currentSpeed + accelAmount);
     } else {
       res = Math.max(targetSpeed, currentSpeed - brakeCapacity);
-    }
 
-    if (res < minSpeed) {
-      const obstacles = this.stepContext.getObstaclesAhead();
-      if (obstacles.length > 0 && obstacles[0].isIntersection) {
-        this.roadData.setHasStopped();
+      if (res < minSpeed) {
+        const obstacles = this.stepContext.getObstaclesAhead();
+        if (obstacles.length > 0 && obstacles[0].isIntersection) {
+          this.roadData.setHasStopped();
+        }
+
+        res = 0;
       }
-
-      res = 0;
     }
 
     return res;
@@ -374,7 +378,9 @@ export class Car extends Square {
         const next = cloneBuf(toPos);
         vec2.scale(next, 1 / devicePixelRatio, next);
 
-        const line = new Line2d(vertex(pos[0], pos[1], 0, color(255)), vertex(next[0], next[1]));
+        const ratio = this.speed / this.maxSpeed;
+        const lineColor = interpolateColors([color(255), color(0, 255)], ratio);
+        const line = new Line2d(vertex(pos[0], pos[1], 0, lineColor), vertex(next[0], next[1]));
         testLines.add(line);
       }
     }
