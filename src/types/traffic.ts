@@ -14,6 +14,7 @@ export type IntersectionTurn = {
 
 export type Obstacle = {
   point: Vector2;
+  speed: number;
   isIntersection: boolean;
 };
 

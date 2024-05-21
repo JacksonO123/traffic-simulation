@@ -3,7 +3,7 @@ import { Car, Intersection, TurnLane } from './road';
 import { fps60Delay, laneChangeMinDist, laneChangeMinFrontDist, speedUpCutoffRotation } from './constants';
 import { LaneObstacle, Obstacle, SP } from '../types/traffic';
 import { brakingDistance, stopDistance } from './params';
-import { vec2Angle } from '../utils/utils';
+import { getEndRoadPoint, getStartRoadPoint, vec2Angle } from '../utils/utils';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -62,7 +62,11 @@ export class TrafficEngine {
         }
       }
 
-      res.splice(insertIndex, 0, { point: this.cars[i].getPos(), isIntersection: false });
+      res.splice(insertIndex, 0, {
+        point: this.cars[i].getPos(),
+        speed: this.cars[i].getSpeed(),
+        isIntersection: false
+      });
     }
 
     const route = [...car.getRoute()];
@@ -80,11 +84,7 @@ export class TrafficEngine {
             : path.getRoadPoints(car.getAbsoluteLane());
 
         if (points.length > 0) {
-          let index = 0;
-
-          if (!car.isStartPoint()) index = points.length - 1;
-
-          let point = cloneBuf(points[index]);
+          const point = cloneBuf(car.isStartPoint() ? getStartRoadPoint(points) : getEndRoadPoint(points));
           vec2.add(path.getSpline().getPos(), point, point);
 
           const dist = distance2d(car.getPos(), point);
@@ -94,7 +94,7 @@ export class TrafficEngine {
             dist <= brakingDistance + stopDistance &&
             (res.length === 0 || dist < distance2d(car.getPos(), res[0].point))
           ) {
-            res.unshift({ point, isIntersection: true });
+            res.unshift({ point, speed: 0, isIntersection: true });
           }
         }
       }

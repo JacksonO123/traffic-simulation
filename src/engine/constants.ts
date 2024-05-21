@@ -11,9 +11,11 @@ export const carHeight = 25;
 
 // minimum distance needed for car to stop at a point
 export const minStopDistance = (carWidth / 2) * devicePixelRatio;
+// used when scaling stop distance with speed ratio
+export const followDistScale = 5;
 
-export const laneChangeStartDist = 150 * devicePixelRatio;
-export const minLaneChangeSteps = 200;
+export const laneChangeStartDist = 200 * devicePixelRatio;
+export const minLaneChangeSteps = 120;
 export const maxLaneChangeSteps = 400;
 const laneChangeX = carWidth;
 const laneChangeY = carHeight + laneGap;
@@ -26,7 +28,7 @@ export const minIntersectionDist = 300;
 // at what angle should the car speed up or slow down
 // for changing lanes when another car is in the target lane
 export const speedUpCutoffRotation = Math.PI / 4;
-export const mergeSlowDownScale = 0.9;
+export const mergeSlowDownScale = 0.75;
 export const mergeSpeedUpScale = 1.25;
 
 export const laneColor = colorf(75);

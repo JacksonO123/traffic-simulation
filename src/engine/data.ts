@@ -188,7 +188,6 @@ export class RoadData {
 
     const res: Vector2[] = [];
 
-    // TODO getLanePoints (maybe)
     const laneFromPoints = this.getCurrentRoad().getRoadPoints(fromLane);
     const laneToPoints = this.getCurrentRoad().getRoadPoints(toLane);
 
@@ -212,8 +211,6 @@ export class RoadData {
   }
 
   setLane(lane: number, dist: number) {
-    console.log('setting lane', lane);
-
     if (!this.canChangeLane) return;
 
     const road = this.getCurrentRoad();
@@ -222,8 +219,7 @@ export class RoadData {
 
     this.roadPoints = this.getLanePoints(road, this.getAbsoluteLane(lane));
 
-    const distScale = 1.15;
-    const laneDist = Math.floor(Math.max(minLaneChangeSteps, dist * distScale));
+    const laneDist = Math.floor(Math.max(minLaneChangeSteps, dist));
 
     this.resetLaneChange();
     this.changingFrom = this.lane;

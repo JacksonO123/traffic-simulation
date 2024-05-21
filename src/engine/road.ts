@@ -11,17 +11,14 @@ import {
   color,
   continuousSplinePoint2d,
   distance2d,
+  easeInQuad,
+  easeOutQuad,
   splinePoint2d,
   vec2,
   vector2,
   vector2FromVector3,
   vector3FromVector2,
-  vertex,
-  easeInExpo,
-  easeOutExpo,
-  easeInQuart,
-  easeInQuad,
-  easeOutQuad
+  vertex
 } from 'simulationjsv2';
 import { IntersectionTurn, LaneObstacle, Obstacle, SP } from '../types/traffic';
 import {
@@ -45,7 +42,7 @@ import {
   brakingDistance,
   intersectionTurnSpeed,
   laneChangeAcceleration,
-  maxLaneChangeSpeed,
+  laneChangeSpeedScale,
   minSpeed,
   stopDistance
 } from './params';
@@ -233,6 +230,8 @@ export class Car extends Square {
 
     if (obstacles.length > 0) {
       const minDist = distance2d(this.getPos(), obstacles[0].point);
+      const minSpeed = 3;
+      const maxLaneChangeSpeed = Math.max(minSpeed, obstacles[0].speed * laneChangeSpeedScale);
 
       if (minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed) {
         if (obstacles[0].isIntersection) {
@@ -285,9 +284,12 @@ export class Car extends Square {
 
     if (obstacles.length > 0) {
       const dist = distance2d(this.getPos(), obstacles[0].point);
-      const stopDist = !obstacles[0].isIntersection ? stopDistance : minStopDistance;
-      let ratio = easeOutQuad((dist - stopDist) / brakingDistance);
+      const stopDist = obstacles[0].isIntersection ? minStopDistance : stopDistance;
+      const ratio = easeOutQuad((dist - stopDist) / brakingDistance);
+      const speedRatio = (obstacles[0].speed - this.speed) / this.maxSpeed;
+
       targetSpeed = this.maxSpeed * ratio;
+      targetSpeed += this.maxSpeed * speedRatio;
     }
 
     const laneObstacle = this.stepContext.getLaneObstacle();
@@ -621,7 +623,7 @@ export abstract class Intersection extends Road {
   }
 }
 
-export class StopSignIntersection extends Intersection {
+export class TrafficLight extends Intersection {
   private pos: Vector3;
   private intersectionLength: number;
   private paths: Road[];
@@ -638,7 +640,7 @@ export class StopSignIntersection extends Intersection {
     this.intersectionLength = laneWidth * numLanes + laneGap * (numLanes + 1);
 
     const smallTurnScale = 14;
-    const turnControlScale = smallTurnScale * (numLanes / 2);
+    const turnControlScale = 2 * smallTurnScale * (numLanes / 2);
     const laneScale = (numLanes - 1) / 2;
 
     const roadSpline1 = new Spline2d(
@@ -717,7 +719,7 @@ export class StopSignIntersection extends Intersection {
 
     const turnSpline5 = new Spline2d(
       vertex(
-        this.pos[0] - this.intersectionLength / 2 + laneWidth / 2 + laneGap,
+        this.pos[0] - (laneWidth + laneGap) / 2,
         this.pos[1] + this.intersectionLength / 2,
         0,
         laneColor
@@ -725,11 +727,11 @@ export class StopSignIntersection extends Intersection {
       [
         splinePoint2d(
           vertex(
-            this.intersectionLength / 2 + (laneWidth + laneGap) * laneScale,
-            -this.intersectionLength / 2 - (laneWidth + laneGap) * laneScale
+            this.intersectionLength / 2 + laneGap * laneScale,
+            -this.intersectionLength / 2 - (laneWidth + laneGap) / 2
           ),
-          vector2(0, -turnControlScale * 3),
-          vector2(-turnControlScale * 3)
+          vector2(0, -turnControlScale),
+          vector2(-turnControlScale)
         )
       ]
     );
@@ -737,25 +739,25 @@ export class StopSignIntersection extends Intersection {
     const turnSpline6 = new Spline2d(
       vertex(
         this.pos[0] + this.intersectionLength / 2,
-        this.pos[1] + this.intersectionLength / 2 - laneWidth / 2 - laneGap,
+        this.pos[1] + (laneWidth + laneGap) / 2,
         0,
         laneColor
       ),
       [
         splinePoint2d(
           vertex(
-            -this.intersectionLength / 2 - (laneWidth + laneGap) * laneScale,
-            -this.intersectionLength / 2 - (laneWidth + laneGap) * laneScale
+            -this.intersectionLength / 2 - (laneWidth + laneGap) / 2,
+            -this.intersectionLength / 2 - (laneWidth + laneGap) / 2
           ),
-          vector2(-turnControlScale * 3),
-          vector2(0, turnControlScale * 3)
+          vector2(-turnControlScale),
+          vector2(0, turnControlScale)
         )
       ]
     );
 
     const turnSpline7 = new Spline2d(
       vertex(
-        this.pos[0] + this.intersectionLength / 2 - laneWidth / 2 - laneGap,
+        this.pos[0] + (laneWidth + laneGap) / 2,
         this.pos[1] - this.intersectionLength / 2,
         0,
         laneColor
@@ -763,11 +765,11 @@ export class StopSignIntersection extends Intersection {
       [
         splinePoint2d(
           vertex(
-            -this.intersectionLength / 2 - (laneWidth + laneGap) * laneScale,
-            this.intersectionLength / 2 + (laneWidth + laneGap) * laneScale
+            -this.intersectionLength / 2 - (laneWidth + laneGap) / 2,
+            this.intersectionLength / 2 + (laneWidth + laneGap) / 2
           ),
-          vector2(0, turnControlScale * 3),
-          vector2(turnControlScale * 3)
+          vector2(0, turnControlScale),
+          vector2(turnControlScale)
         )
       ]
     );
@@ -775,23 +777,24 @@ export class StopSignIntersection extends Intersection {
     const turnSpline8 = new Spline2d(
       vertex(
         this.pos[0] - this.intersectionLength / 2,
-        this.pos[1] - this.intersectionLength / 2 + laneWidth / 2 + laneGap,
+        this.pos[1] - (laneWidth + laneGap) / 2,
         0,
         laneColor
       ),
       [
         splinePoint2d(
           vertex(
-            this.intersectionLength / 2 + (laneWidth + laneGap) * laneScale,
-            this.intersectionLength / 2 + (laneWidth + laneGap) * laneScale
+            this.intersectionLength / 2 + (laneWidth + laneGap) / 2,
+            this.intersectionLength / 2 + (laneWidth + laneGap) / 2
           ),
-          vector2(turnControlScale * 3),
-          vector2(0, -turnControlScale * 3)
+          vector2(turnControlScale),
+          vector2(0, -turnControlScale)
         )
       ]
     );
 
     const speedLimit = this.getSpeedLimit();
+    const leftmostLane = twoWay ? numLanes / 2 - 1 : numLanes - 1;
 
     const road1 = new Road(roadSpline1, numLanes, speedLimit, laneWidth, twoWay);
     const road2 = new Road(roadSpline2, numLanes, speedLimit, laneWidth, twoWay);
@@ -800,10 +803,10 @@ export class StopSignIntersection extends Intersection {
     const turn2 = new TurnLane(turnSpline2, laneWidth, 0);
     const turn3 = new TurnLane(turnSpline3, laneWidth, 0);
     const turn4 = new TurnLane(turnSpline4, laneWidth, 0);
-    const turn5 = new TurnLane(turnSpline5, laneWidth, 0);
-    const turn6 = new TurnLane(turnSpline6, laneWidth, 0);
-    const turn7 = new TurnLane(turnSpline7, laneWidth, 0);
-    const turn8 = new TurnLane(turnSpline8, laneWidth, 0);
+    const turn5 = new TurnLane(turnSpline5, laneWidth, leftmostLane);
+    const turn6 = new TurnLane(turnSpline6, laneWidth, leftmostLane);
+    const turn7 = new TurnLane(turnSpline7, laneWidth, leftmostLane);
+    const turn8 = new TurnLane(turnSpline8, laneWidth, leftmostLane);
 
     const pathLanes: IntersectionTurn[] = [];
 

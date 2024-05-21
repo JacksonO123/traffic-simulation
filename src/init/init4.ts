@@ -9,7 +9,7 @@ import {
 } from 'simulationjsv2';
 import { SP } from '../types/traffic';
 import { TrafficEngine } from '../engine/engine';
-import { Car, Road, StopSignIntersection, laneLines, testLines } from '../engine/road';
+import { Car, Road, TrafficLight, laneLines, testLines } from '../engine/road';
 import { carHeight, laneColor } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
@@ -36,7 +36,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
 
   const road = new Road(roadSpline, 4, 20, carHeight, true);
   const road2 = new Road(roadSpline2, 4, 20, carHeight, true);
-  const intersection = new StopSignIntersection(vector2(500, -600), 4, carHeight, true);
+  const intersection = new TrafficLight(vector2(500, -600), 4, carHeight, true);
 
   intersection.addPaths(canvas);
   intersection.connectRoadEnd(road, 0, 200);
