@@ -11,8 +11,8 @@ import {
   color,
   continuousSplinePoint2d,
   distance2d,
-  easeInQuad,
   easeOutQuad,
+  interpolateColors,
   splinePoint2d,
   vec2,
   vector2,
@@ -46,7 +46,6 @@ import {
   minSpeed,
   stopDistance
 } from './params';
-import { interpolateColors } from '../../../simulationjs/v2/dist/internalUtils';
 
 export const testLines = new SceneCollection('test');
 
