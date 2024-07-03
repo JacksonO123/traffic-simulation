@@ -1,5 +1,5 @@
 import { Vector2, cloneBuf, easeInOutQuad, vec2 } from 'simulationjsv2';
-import { Intersection, Road, TurnLane } from './road';
+import { Car, Intersection, Road, TurnLane } from './road';
 import { LaneObstacle, Obstacle, SP } from '../types/traffic';
 import { minLaneChangeSteps } from './constants';
 import { checkLaneBounds } from '../utils/error';
@@ -35,6 +35,7 @@ class IntersectionState {
 }
 
 export class RoadData {
+  private car: Car;
   private startPoint: SP;
   private lane: number;
   private loop: boolean;
@@ -52,7 +53,8 @@ export class RoadData {
   private laneChangePoints: Vector2[];
   private laneChangeIndex: number;
 
-  constructor(lane: number, startPoint: SP, loop = false, canChangeLane = true) {
+  constructor(car: Car, lane: number, startPoint: SP, loop = false, canChangeLane = true) {
+    this.car = car;
     this.startPoint = startPoint;
     this.lane = lane;
     this.loop = loop;
@@ -373,6 +375,10 @@ export class RoadData {
       (isStart && this.roadPointIndex >= this.roadPoints.length - 1) ||
       (!isStart && this.roadPointIndex === 0)
     ) {
+      if (this.getCurrentRoad() instanceof Intersection) {
+        (this.getCurrentRoad() as Intersection).leave(this.car);
+      }
+
       if (isStart) {
         if (this.roadIndex < this.route.length - 1) {
           this.roadIndex++;
@@ -397,6 +403,10 @@ export class RoadData {
           this.roadPoints = this.getLanePoints(this.getCurrentRoad(), lane);
           this.roadPointIndex = this.roadPoints.length - 1;
         }
+      }
+
+      if (this.getCurrentRoad() instanceof Intersection) {
+        (this.getCurrentRoad() as Intersection).enter(this.car);
       }
 
       if (this.inIntersection() && this.intersectionState.hasStopped()) {

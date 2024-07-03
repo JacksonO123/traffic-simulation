@@ -6,6 +6,11 @@ export enum SP {
   END
 }
 
+export enum ContinueState {
+  CONTINUE,
+  NO_PATH
+}
+
 export type IntersectionTurn = {
   from: number;
   to: number;

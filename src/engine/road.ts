@@ -20,7 +20,7 @@ import {
   vector3FromVector2,
   vertex
 } from 'simulationjsv2';
-import { IntersectionTurn, LaneObstacle, Obstacle, SP } from '../types/traffic';
+import { ContinueState, IntersectionTurn, LaneObstacle, Obstacle, SP } from '../types/traffic';
 import {
   carHeight,
   carWidth,
@@ -46,8 +46,9 @@ import {
   minSpeed,
   stopDistance
 } from './params';
+import { getEndRoadPoint, getStartRoadPoint } from '../utils/utils';
 
-export const testLines = new SceneCollection('test');
+export const speedLines = new SceneCollection('test');
 
 class LaneLines {
   private lines: Line2d[][];
@@ -90,7 +91,6 @@ export class Car extends Square {
   private stepContext: StepContext;
   private maxSpeed: number;
   private speed: number;
-
   private roadData: RoadData;
 
   constructor(lane: number, startPoint: SP, color?: Color, loop = false, canChangeLane = true) {
@@ -99,7 +99,7 @@ export class Car extends Square {
     this.maxSpeed = 0;
     this.speed = 0.1;
 
-    this.roadData = new RoadData(lane, startPoint, loop, canChangeLane);
+    this.roadData = new RoadData(this, lane, startPoint, loop, canChangeLane);
 
     this.stepContext = new StepContext();
   }
@@ -195,7 +195,7 @@ export class Car extends Square {
     const toPoint = cloneBuf(this.roadData.getLookAtPoint());
     vec2.add(toPoint, this.roadData.getCurrentSpline().getPos(), toPoint);
 
-    let rotation = Math.atan2(toPoint[1] - toPos[1], toPoint[0] - toPos[0]);
+    const rotation = Math.atan2(toPoint[1] - toPos[1], toPoint[0] - toPos[0]);
 
     this.moveTo(toPos);
     this.rotateTo(rotation);
@@ -232,7 +232,7 @@ export class Car extends Square {
       const minSpeed = 3;
       const maxLaneChangeSpeed = Math.max(minSpeed, obstacles[0].speed * laneChangeSpeedScale);
 
-      if (minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed) {
+      if (minDist < laneChangeStartDist && this.speed <= maxLaneChangeSpeed && !obstacles[0].isIntersection) {
         if (obstacles[0].isIntersection) {
           return [minDist > minIntersectionDist, null];
         } else {
@@ -380,9 +380,10 @@ export class Car extends Square {
         vec2.scale(next, 1 / devicePixelRatio, next);
 
         const ratio = this.speed / this.maxSpeed;
-        const lineColor = interpolateColors([color(255), color(0, 255)], ratio);
+        const lineColor =
+          ratio > 1 ? color(245, 110, 255) : interpolateColors([color(255), color(0, 255)], ratio);
         const line = new Line2d(vertex(pos[0], pos[1], 0, lineColor), vertex(next[0], next[1]));
-        testLines.add(line);
+        speedLines.add(line);
       }
     }
   }
@@ -576,6 +577,7 @@ export class TurnLane extends Road {
 export abstract class Intersection extends Road {
   protected roadAttachments: Map<number, Road>;
   protected pathLanes: IntersectionTurn[];
+  protected activeCars: Car[];
 
   constructor(numLanes: number, laneWidth: number, twoWay: boolean) {
     const speedLimit = 5;
@@ -583,6 +585,7 @@ export abstract class Intersection extends Road {
 
     this.roadAttachments = new Map();
     this.pathLanes = [];
+    this.activeCars = [];
   }
 
   getPath(from: Road, to: Road) {
@@ -620,6 +623,21 @@ export abstract class Intersection extends Road {
 
     return -1;
   }
+
+  enter(car: Car) {
+    this.activeCars.push(car);
+  }
+
+  leave(car: Car) {
+    this.activeCars = this.activeCars.filter((item) => item !== car);
+  }
+
+  abstract canContinue(
+    car: Car,
+    obstacles: Obstacle[],
+    prevRoad: Road,
+    nextRoad: Road
+  ): Vector2 | ContinueState;
 }
 
 export class TrafficLight extends Intersection {
@@ -900,5 +918,36 @@ export class TrafficLight extends Intersection {
     spline.moveTo(pos);
 
     road.recomputePoints();
+  }
+
+  canContinue(car: Car, obstacles: Obstacle[], prevRoad: Road, nextRoad: Road): Vector2 | ContinueState {
+    const path = this.getPath(prevRoad, nextRoad);
+
+    if (path == null) {
+      return ContinueState.NO_PATH;
+    }
+
+    const points =
+      path instanceof TurnLane
+        ? path.getRoadPoints(car.getAbsoluteLane(), car.isStartPoint())
+        : path.getRoadPoints(car.getAbsoluteLane());
+
+    if (points.length > 0) {
+      const point = cloneBuf(car.isStartPoint() ? getStartRoadPoint(points) : getEndRoadPoint(points));
+      vec2.add(path.getSpline().getPos(), point, point);
+      const dist = distance2d(car.getPos(), point);
+
+      if (this.activeCars.length > 0) {
+        return point;
+      } else if (
+        !car.hasStopped() &&
+        dist <= brakingDistance + stopDistance &&
+        (obstacles.length === 0 || dist < distance2d(car.getPos(), obstacles[0].point))
+      ) {
+        return point;
+      }
+    }
+
+    return ContinueState.CONTINUE;
   }
 }

@@ -1,9 +1,9 @@
 import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
-import { Car, Intersection, TurnLane } from './road';
+import { Car, Intersection } from './road';
 import { fps60Delay, laneChangeMinDist, laneChangeMinFrontDist, speedUpCutoffRotation } from './constants';
-import { LaneObstacle, Obstacle, SP } from '../types/traffic';
+import { ContinueState, LaneObstacle, Obstacle, SP } from '../types/traffic';
 import { brakingDistance, stopDistance } from './params';
-import { getEndRoadPoint, getStartRoadPoint, vec2Angle } from '../utils/utils';
+import { vec2Angle } from '../utils/utils';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -75,28 +75,14 @@ export class TrafficEngine {
 
     if (nextRoad instanceof Intersection) {
       const roadAfter = route[index + (car.getStartPoint() === SP.START ? 2 : -2)];
-      const path = nextRoad.getPath(route[index], roadAfter);
+      const point = nextRoad.canContinue(car, res, route[index], roadAfter);
 
-      if (path) {
-        const points =
-          path instanceof TurnLane
-            ? path.getRoadPoints(car.getAbsoluteLane(), car.isStartPoint())
-            : path.getRoadPoints(car.getAbsoluteLane());
-
-        if (points.length > 0) {
-          const point = cloneBuf(car.isStartPoint() ? getStartRoadPoint(points) : getEndRoadPoint(points));
-          vec2.add(path.getSpline().getPos(), point, point);
-
-          const dist = distance2d(car.getPos(), point);
-
-          if (
-            !car.hasStopped() &&
-            dist <= brakingDistance + stopDistance &&
-            (res.length === 0 || dist < distance2d(car.getPos(), res[0].point))
-          ) {
-            res.unshift({ point, speed: 0, isIntersection: true });
-          }
-        }
+      if (point === ContinueState.CONTINUE) {
+        return res;
+      } else if (point === ContinueState.NO_PATH) {
+        return res;
+      } else {
+        res.unshift({ point, speed: 0, isIntersection: true });
       }
     }
 
@@ -195,6 +181,7 @@ export class TrafficEngine {
           if (targetLane === null) {
             toLane = this.getLaneChange(this.cars[i]);
           } else {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [canChange, _, obstacle] = this.checkLaneAvailability(this.cars[i], targetLane);
 
             if (canChange) {
