@@ -577,7 +577,7 @@ export class TurnLane extends Road {
 export abstract class Intersection extends Road {
   protected roadAttachments: Map<number, Road>;
   protected pathLanes: IntersectionTurn[];
-  protected activeCars: Car[];
+  protected registeredCars: Car[];
 
   constructor(numLanes: number, laneWidth: number, twoWay: boolean) {
     const speedLimit = 5;
@@ -585,7 +585,7 @@ export abstract class Intersection extends Road {
 
     this.roadAttachments = new Map();
     this.pathLanes = [];
-    this.activeCars = [];
+    this.registeredCars = [];
   }
 
   getPath(from: Road, to: Road) {
@@ -624,12 +624,16 @@ export abstract class Intersection extends Road {
     return -1;
   }
 
-  enter(car: Car) {
-    this.activeCars.push(car);
+  isRegistered(car: Car) {
+    return this.registeredCars.includes(car);
   }
 
-  leave(car: Car) {
-    this.activeCars = this.activeCars.filter((item) => item !== car);
+  register(car: Car) {
+    this.registeredCars.push(car);
+  }
+
+  unregister(car: Car) {
+    this.registeredCars = this.registeredCars.filter((item) => item !== car);
   }
 
   abstract canContinue(
@@ -937,14 +941,16 @@ export class TrafficLight extends Intersection {
       vec2.add(path.getSpline().getPos(), point, point);
       const dist = distance2d(car.getPos(), point);
 
-      if (this.activeCars.length > 0) {
-        return point;
-      } else if (
-        !car.hasStopped() &&
+      if (
         dist <= brakingDistance + stopDistance &&
         (obstacles.length === 0 || dist < distance2d(car.getPos(), obstacles[0].point))
       ) {
-        return point;
+        if (car.hasStopped()) {
+          const queueIndex = this.registeredCars.indexOf(car);
+          if (queueIndex > 0) return point;
+        } else {
+          return point;
+        }
       }
     }
 

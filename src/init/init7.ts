@@ -12,7 +12,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   );
 
   const roadSpline2 = new Spline2d(vertex(0, 0, 0, laneColor), [
-    splinePoint2d(vertex(500, 0), vector2(1), vector2())
+    splinePoint2d(vertex(300, 0), vector2(1), vector2())
   ]);
 
   canvas.add(roadSpline);
@@ -41,14 +41,14 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   car.setMaxSpeed(3);
   engine.addCar(car);
 
-  const car2 = new Car(0, dir, color(0, 123, 255));
+  const car2 = new Car(0, SP.END, color(0, 123, 255));
   canvas.add(car2);
   car2.setRoute([road, intersection, road2]);
   // car2.setRoute([road]);
   // car2.setMaxSpeed(1);
   // car2.setMaxSpeed(6);
   car2.setMaxSpeed(3);
-  car2.startAt(0.025);
+  // car2.startAt(0);
   engine.addCar(car2);
 
   let pressing = false;

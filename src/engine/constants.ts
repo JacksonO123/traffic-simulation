@@ -32,3 +32,5 @@ export const mergeSlowDownScale = 0.75;
 export const mergeSpeedUpScale = 1.25;
 
 export const laneColor = colorf(75);
+
+export const intersectionRegisterDist = 125;

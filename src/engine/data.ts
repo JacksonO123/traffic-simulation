@@ -305,6 +305,7 @@ export class RoadData {
 
   /**
    * @param num - value from 0 to 1 for where the car should start on the road
+   * for debugging purposes
    */
   startAt(num: number) {
     const index = Math.floor(this.roadPoints.length * num);
@@ -376,7 +377,7 @@ export class RoadData {
       (!isStart && this.roadPointIndex === 0)
     ) {
       if (this.getCurrentRoad() instanceof Intersection) {
-        (this.getCurrentRoad() as Intersection).leave(this.car);
+        (this.getCurrentRoad() as Intersection).unregister(this.car);
       }
 
       if (isStart) {
@@ -406,7 +407,7 @@ export class RoadData {
       }
 
       if (this.getCurrentRoad() instanceof Intersection) {
-        (this.getCurrentRoad() as Intersection).enter(this.car);
+        (this.getCurrentRoad() as Intersection).register(this.car);
       }
 
       if (this.inIntersection() && this.intersectionState.hasStopped()) {

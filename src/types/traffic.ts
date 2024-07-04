@@ -11,6 +11,11 @@ export enum ContinueState {
   NO_PATH
 }
 
+export type ContinueData = {
+  point: Vector2;
+  path: Vector2[];
+};
+
 export type IntersectionTurn = {
   from: number;
   to: number;

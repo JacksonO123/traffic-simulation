@@ -1,9 +1,15 @@
-import { cloneBuf, distance2d, vec2 } from 'simulationjsv2';
+import { Vector2, cloneBuf, distance2d, vec2 } from 'simulationjsv2';
 import { Car, Intersection } from './road';
-import { fps60Delay, laneChangeMinDist, laneChangeMinFrontDist, speedUpCutoffRotation } from './constants';
+import {
+  fps60Delay,
+  intersectionRegisterDist,
+  laneChangeMinDist,
+  laneChangeMinFrontDist,
+  speedUpCutoffRotation
+} from './constants';
 import { ContinueState, LaneObstacle, Obstacle, SP } from '../types/traffic';
 import { brakingDistance, stopDistance } from './params';
-import { vec2Angle } from '../utils/utils';
+import { closestRoadPoint, splineDistPoint, vec2Angle } from '../utils/utils';
 
 export class TrafficEngine {
   private cars: Car[];
@@ -77,11 +83,19 @@ export class TrafficEngine {
       const roadAfter = route[index + (car.getStartPoint() === SP.START ? 2 : -2)];
       const point = nextRoad.canContinue(car, res, route[index], roadAfter);
 
-      if (point === ContinueState.CONTINUE) {
-        return res;
-      } else if (point === ContinueState.NO_PATH) {
+      if (point === ContinueState.CONTINUE || point === ContinueState.NO_PATH) {
         return res;
       } else {
+        const path = route[index].getRoadPoints(car.getAbsoluteLane());
+        const splinePos = route[index].getSpline().getPos();
+        const carPos = vec2.sub(car.getPos(), splinePos) as Vector2;
+        const closestPoint = closestRoadPoint(path, carPos)!;
+        const dist = splineDistPoint(path, closestPoint, point);
+
+        if (dist <= intersectionRegisterDist && !nextRoad.isRegistered(car)) {
+          nextRoad.register(car);
+        }
+
         res.unshift({ point, speed: 0, isIntersection: true });
       }
     }
