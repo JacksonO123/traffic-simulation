@@ -15,8 +15,8 @@ importers:
         specifier: latest
         version: 0.1.1
       simulationjsv2:
-        specifier: link:../simulationjs/v2
-        version: link:../simulationjs/v2
+        specifier: ^0.8.4
+        version: 0.8.4
       vite:
         specifier: ^5.1.4
         version: 5.2.13(@types/node@20.14.2)
@@ -505,6 +505,9 @@ packages:
     resolution: {integrity: sha512-Hqgy/ETgpt2L5xueA/zHHIl4fJI2O4XUE9l4+OIfbJIRSnTJb/QscncdqqZzofQegIJugRIF57OJea1khw2SDw==}
     engines: {node: ^18.18.0 || >=20.0.0}
 
+  '@webgpu/types@0.1.48':
+    resolution: {integrity: sha512-e3zmDEPih4Rle+JrP5cT8nCCtDizoUpEaN72OuD1clbhXGERtn0wwuMdxOrBymu3kMLWKDd8hd+ERhSheLuLTg==}
+
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
     peerDependencies:
@@ -946,6 +949,9 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
+  simulationjsv2@0.8.4:
+    resolution: {integrity: sha512-pEPaW1R5UWbnmU7VIQDAFW3VtKArmJ2FV2+NTnQ0wrmTabZ6mF04fcJ3CBTYCaKV6z6OYa7ouhtt44iZMLoCpA==}
+
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
@@ -1048,6 +1054,9 @@ packages:
         optional: true
       terser:
         optional: true
+
+  wgpu-matrix@2.9.1:
+    resolution: {integrity: sha512-eJqSM1nNvzcfDhSFCwcbjAkxkaqwQl6KnxOsL52ydwfwQW9yIODgmKJaKTKnutxbfAGGZE1KVT3NgX71TJ/OpA==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -1533,6 +1542,8 @@ snapshots:
       '@typescript-eslint/types': 7.15.0
       eslint-visitor-keys: 3.4.3
 
+  '@webgpu/types@0.1.48': {}
+
   acorn-jsx@5.3.2(acorn@8.12.0):
     dependencies:
       acorn: 8.12.0
@@ -1980,6 +1991,11 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
+  simulationjsv2@0.8.4:
+    dependencies:
+      '@webgpu/types': 0.1.48
+      wgpu-matrix: 2.9.1
+
   slash@3.0.0: {}
 
   source-map-js@1.2.0: {}
@@ -2049,6 +2065,8 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.14.2
       fsevents: 2.3.3
+
+  wgpu-matrix@2.9.1: {}
 
   which@2.0.2:
     dependencies:

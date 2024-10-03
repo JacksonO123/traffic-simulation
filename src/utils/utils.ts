@@ -1,7 +1,7 @@
-import { Vector2, distance2d, vec2 } from 'simulationjsv2';
+import { Vector2, Vector2m, distance2d, vec2 } from 'simulationjsv2';
 
 // remove when lib fixes angle function on vec2/vec3
-export const vec2Angle = (a: Vector2, b: Vector2) => {
+export const vec2Angle = (a: Vector2m, b: Vector2m) => {
   const ax = a[0];
   const ay = a[1];
   const bx = b[0];

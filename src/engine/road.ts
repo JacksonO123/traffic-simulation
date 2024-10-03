@@ -1,10 +1,10 @@
 import {
   Color,
-  Line2d,
-  SceneCollection,
+  EmptyElement,
   Simulation,
   Spline2d,
   Square,
+  TraceLines2d,
   Vector2,
   Vector3,
   cloneBuf,
@@ -12,11 +12,10 @@ import {
   continuousSplinePoint2d,
   distance2d,
   easeOutQuad,
-  interpolateColors,
   splinePoint2d,
   vec2,
   vector2,
-  vector2FromVector3,
+  vector3,
   vector3FromVector2,
   vertex
 } from 'simulationjsv2';
@@ -48,40 +47,42 @@ import {
 } from './params';
 import { getEndRoadPoint, getStartRoadPoint } from '../utils/utils';
 
-export const speedLines = new SceneCollection('test');
-
 class LaneLines {
-  private lines: Line2d[][];
-  private lineCollection: SceneCollection;
+  private lineColor = color(0, 255, 255);
+  private lines: TraceLines2d[][];
+  private collection: EmptyElement;
 
   constructor() {
     this.lines = [];
-    this.lineCollection = new SceneCollection('lane-lines');
+    this.collection = new EmptyElement('lane-lines');
   }
 
   getCollection() {
-    return this.lineCollection;
+    return this.collection;
   }
 
-  addLines(lines: Line2d[]) {
-    this.lines.push(lines);
+  addLines(pointsArr: Vector2[][]) {
+    const traces: TraceLines2d[] = [];
 
-    this.updateCollection();
+    pointsArr.forEach((points) => {
+      const trace = new TraceLines2d(this.lineColor);
+      points.forEach((point) => trace.addPoint(point));
+      traces.push(trace);
+      this.collection.add(trace);
+    });
+
+    this.lines.push(traces);
 
     return this.lines.length - 1;
   }
 
-  setLines(index: number, lines: Line2d[]) {
+  setLines(index: number, pointsArr: Vector2[][]) {
     if (index < 0 || index >= this.lines.length) return;
 
-    this.lines[index] = lines;
+    const traces = this.lines[index];
+    traces.forEach((trace) => trace.clear());
 
-    this.updateCollection();
-  }
-
-  private updateCollection() {
-    const newScene = this.lines.flat();
-    this.lineCollection.setSceneObjects(newScene);
+    pointsArr.forEach((points, index) => points.forEach((point) => traces[index].addPoint(point)));
   }
 }
 
@@ -94,7 +95,8 @@ export class Car extends Square {
   private roadData: RoadData;
 
   constructor(lane: number, startPoint: SP, color?: Color, loop = false, canChangeLane = true) {
-    super(vector2(), carWidth, carHeight, color, 0, vector2(0.5, 0.5));
+    // TODO check for correct center offset
+    super(vector2(), carWidth * devicePixelRatio, carHeight * devicePixelRatio, color, 0);
 
     this.maxSpeed = 0;
     this.speed = 0.1;
@@ -169,8 +171,9 @@ export class Car extends Square {
   }
 
   private routeUpdated() {
-    const startPoint = cloneBuf(this.roadData.getCurrentPoint());
+    const startPoint = vector3FromVector2(this.roadData.getCurrentPoint());
     vec2.add(startPoint, this.roadData.getCurrentSpline().getPos(), startPoint);
+    vec2.scale(startPoint, 1 / devicePixelRatio, startPoint);
 
     const toPoint = cloneBuf(this.roadData.getLookAtPoint());
     vec2.add(toPoint, this.roadData.getCurrentSpline().getPos(), toPoint);
@@ -180,7 +183,7 @@ export class Car extends Square {
     const pos = this.getPos();
     const rotation = Math.atan2(toPoint[1] - pos[1], toPoint[0] - pos[0]);
 
-    this.rotateTo(rotation);
+    this.rotateTo(vector3(0, 0, rotation));
   }
 
   /**
@@ -189,22 +192,24 @@ export class Car extends Square {
   startAt(num: number) {
     this.roadData.startAt(num);
 
-    const toPos = cloneBuf(this.roadData.getCurrentPoint());
+    const toPos = vector3FromVector2(this.roadData.getCurrentPoint());
     vec2.add(toPos, this.roadData.getCurrentSpline().getPos(), toPos);
+    vec2.scale(toPos, 1 / devicePixelRatio, toPos);
 
     const toPoint = cloneBuf(this.roadData.getLookAtPoint());
     vec2.add(toPoint, this.roadData.getCurrentSpline().getPos(), toPoint);
+    vec2.scale(toPoint, 1 / devicePixelRatio, toPoint);
 
     const rotation = Math.atan2(toPoint[1] - toPos[1], toPoint[0] - toPos[0]);
 
     this.moveTo(toPos);
-    this.rotateTo(rotation);
+    this.rotateTo(vector3(0, 0, rotation));
   }
 
   getDirectionVector() {
     const vec = vector2(1);
 
-    vec2.rotate(vec, vector2(), this.getRotation(), vec);
+    vec2.rotate(vec, vector2(), this.getRotation()[2], vec);
 
     return vec;
   }
@@ -333,22 +338,22 @@ export class Car extends Square {
     vec2.add(toPos, splinePos, toPos);
     vec2.add(toLookAt, splinePos, toLookAt);
 
-    let pos = this.getPos();
+    let pos = cloneBuf(this.getPos());
     let rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
 
     const targetSpeed = this.getTargetSpeed();
     this.speed = this.stepToTargetSpeed(this.speed, targetSpeed);
 
     let toTravel = this.speed * scale;
-    let dist = distance2d(pos, toPos);
+    let dist = distance2d(pos, toPos) / devicePixelRatio;
 
     const moveCar = (amount: number) => {
       if (isNaN(rotation)) return;
 
-      const velocity = vector2(amount);
+      const velocity = vector3(amount / devicePixelRatio);
       vec2.rotate(velocity, vector2(), rotation, velocity);
 
-      this.rotateTo(rotation);
+      this.rotateTo(vector3(0, 0, rotation));
       this.move(velocity);
     };
 
@@ -366,7 +371,7 @@ export class Car extends Square {
 
         splinePos = this.roadData.getCurrentSpline().getPos();
 
-        pos = this.getPos();
+        pos = cloneBuf(this.getPos());
         toPos = cloneBuf(this.roadData.getCurrentPoint());
         toLookAt = cloneBuf(this.roadData.getLookAtPoint());
 
@@ -376,14 +381,12 @@ export class Car extends Square {
         rotation = Math.atan2(toLookAt[1] - pos[1], toLookAt[0] - pos[0]);
         dist = distance2d(pos, toPos);
 
-        const next = cloneBuf(toPos);
-        vec2.scale(next, 1 / devicePixelRatio, next);
+        // const next = cloneBuf(toPos);
+        // vec2.scale(next, 1 / devicePixelRatio, next);
 
-        const ratio = this.speed / this.maxSpeed;
-        const lineColor =
-          ratio > 1 ? color(245, 110, 255) : interpolateColors([color(255), color(0, 255)], ratio);
-        const line = new Line2d(vertex(pos[0], pos[1], 0, lineColor), vertex(next[0], next[1]));
-        speedLines.add(line);
+        // const ratio = this.speed / this.maxSpeed;
+        // const lineColor =
+        //   ratio > 1 ? color(245, 110, 255) : interpolateColors([color(255), color(0, 255)], ratio);
       }
     }
   }
@@ -431,7 +434,7 @@ export class Road {
 
     this.setWidthToLanes();
 
-    this.updateRoadPoints(this.spline.getLength() * dprScale);
+    this.updateRoadPoints(this.spline.getLength());
   }
 
   laneInRange(lane: number) {
@@ -442,45 +445,9 @@ export class Road {
     return lane >= 0 && lane < maxNum;
   }
 
-  private createLaneLine(points: Vector2[]) {
-    const lines: Line2d[] = [];
-    const skip = 20;
-
-    const splinePos = this.spline.getPos();
-
-    const addLine = (toIndex: number, fromIndex?: number) => {
-      const pos = cloneBuf(points[fromIndex ? fromIndex : toIndex - skip]);
-      vec2.add(pos, splinePos, pos);
-
-      const diff = cloneBuf(points[toIndex]);
-      vec2.add(diff, splinePos, diff);
-      vec2.scale(diff, 1 / devicePixelRatio, diff);
-
-      const line = new Line2d(
-        vertex(pos[0], pos[1], pos[2], color(0, 255, 255)),
-        vertex(diff[0], diff[1], diff[2])
-      );
-
-      lines.push(line);
-    };
-
-    let i = skip;
-    for (; i < points.length; i += skip) {
-      addLine(i);
-    }
-
-    i -= skip;
-
-    if (i < points.length - 1) {
-      addLine(points.length - 1, i);
-    }
-
-    return lines;
-  }
-
   private updateRoadPoints(detail: number) {
     this.roadPoints = [];
-    let lines: Line2d[] = [];
+    const pointsArr: Vector2[][] = [];
 
     for (let lane = 0; lane < this.lanes; lane++) {
       const arr: Vector2[] = [];
@@ -500,16 +467,19 @@ export class Road {
         arr.push(pos);
       }
 
-      const newLines = this.createLaneLine(arr);
-      lines = lines.concat(newLines);
+      pointsArr.push(arr);
 
       this.roadPoints.push(arr);
     }
 
+    const splinePos = this.spline.getPos();
+    const lanePoints = pointsArr.map((points) =>
+      points.map((point) => vec2.add(point, splinePos) as Vector2)
+    );
     if (this.laneLineIndex !== -1) {
-      laneLines.setLines(this.laneLineIndex, lines);
+      laneLines.setLines(this.laneLineIndex, lanePoints);
     } else {
-      this.laneLineIndex = laneLines.addLines(lines);
+      this.laneLineIndex = laneLines.addLines(lanePoints);
     }
   }
 
@@ -914,10 +884,9 @@ export class TrafficLight extends Intersection {
 
     const spline = road.getSpline();
 
-    const pos = vector2FromVector3(this.pos);
+    const pos = this.pos;
     pos[0] += this.xScales[intersectionSide] * this.intersectionLength;
     pos[1] += this.yScales[intersectionSide] * this.intersectionLength;
-    vec2.scale(pos, devicePixelRatio, pos);
 
     spline.moveTo(pos);
 

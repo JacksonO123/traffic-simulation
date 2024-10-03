@@ -9,7 +9,7 @@ import {
 } from 'simulationjsv2';
 import { SP } from '../types/traffic';
 import { TrafficEngine } from '../engine/engine';
-import { Car, Road, TrafficLight, laneLines, speedLines } from '../engine/road';
+import { Car, Road, TrafficLight, laneLines } from '../engine/road';
 import { carHeight, laneColor } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
@@ -39,7 +39,6 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   intersection.connectRoadStart(road2, 1);
 
   canvas.add(laneLines.getCollection());
-  canvas.add(speedLines);
 
   // const dir = SP.START;
   const dir = SP.END;

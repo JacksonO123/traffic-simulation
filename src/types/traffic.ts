@@ -1,4 +1,4 @@
-import { Vector2 } from 'simulationjsv2';
+import { Vector2, Vector3 } from 'simulationjsv2';
 import { Car, Road } from '../engine/road';
 
 export enum SP {
@@ -23,7 +23,7 @@ export type IntersectionTurn = {
 };
 
 export type Obstacle = {
-  point: Vector2;
+  point: Vector2 | Vector3;
   speed: number;
   isIntersection: boolean;
 };

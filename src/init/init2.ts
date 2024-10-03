@@ -1,10 +1,13 @@
 import {
+  Circle,
   Simulation,
   Spline2d,
+  Vector2,
   color,
   colorf,
   continuousSplinePoint2d,
   splinePoint2d,
+  vec2,
   vector2,
   vertex
 } from 'simulationjsv2';
@@ -17,8 +20,8 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const roadSpline = new Spline2d(
     vertex(100, -75, 0, colorf(75)),
     [
-      splinePoint2d(vertex(500, -400), vector2(400), vector2(-400)),
-      continuousSplinePoint2d(vertex(500, -800), vector2(400))
+      splinePoint2d(vertex(500, -300), vector2(400), vector2(-400)),
+      continuousSplinePoint2d(vertex(550, -650), vector2(400))
     ],
     100
   );
@@ -29,10 +32,18 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
 
   canvas.add(laneLines.getCollection());
 
+  // const points = road.getRoadPoints(1);
+  // points.forEach((point) => {
+  //   const pos = vec2.add(point, road.getSpline().getPos()) as Vector2;
+  //   vec2.scale(pos, 1 / devicePixelRatio, pos);
+  //   const circle = new Circle(pos, 2, colorf(255));
+  //   canvas.add(circle);
+  // });
+
   const car = new Car(1, SP.START, color(0, 123, 255));
   canvas.add(car);
   car.addToRoute(road);
-  car.setMaxSpeed(12);
+  car.setMaxSpeed(5);
   engine.addCar(car);
 
   const carSpeed = 1;

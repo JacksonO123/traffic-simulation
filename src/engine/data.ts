@@ -159,21 +159,22 @@ export class RoadData {
 
   getLookAtPoint() {
     const isStart = this.isStartPoint();
+    const skip = 1;
 
     if (this.isChangingLanes()) {
-      if (this.laneChangeIndex < this.laneChangePoints.length - 1) {
-        return this.laneChangePoints[this.laneChangeIndex + 1];
+      if (this.laneChangeIndex < this.laneChangePoints.length - skip) {
+        return this.laneChangePoints[this.laneChangeIndex + skip];
       }
 
       return this.laneChangePoints[this.laneChangeIndex];
     }
 
     if (isStart) {
-      if (this.roadPointIndex < this.roadPoints.length - 1) {
-        return this.roadPoints[this.roadPointIndex + 1];
+      if (this.roadPointIndex < this.roadPoints.length - skip) {
+        return this.roadPoints[this.roadPointIndex + skip];
       }
     } else {
-      return this.roadPoints[Math.max(this.roadPointIndex - 1, 0)];
+      return this.roadPoints[Math.max(this.roadPointIndex - skip, 0)];
     }
 
     return this.getCurrentPoint();

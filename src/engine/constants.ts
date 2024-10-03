@@ -16,7 +16,7 @@ export const followDistScale = 5;
 
 export const laneChangeStartDist = 200 * devicePixelRatio;
 export const minLaneChangeSteps = 120;
-export const maxLaneChangeSteps = 400;
+export const maxLaneChangeSteps = 300;
 const laneChangeX = carWidth;
 const laneChangeY = carHeight + laneGap;
 export const laneChangeMinDist = Math.sqrt(laneChangeX * laneChangeX + laneChangeY * laneChangeY) / dprScale;
