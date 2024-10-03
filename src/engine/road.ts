@@ -123,7 +123,7 @@ export class Car extends Square {
     const obstacles = this.stepContext.getObstaclesAhead();
 
     if (obstacles.length > 0) {
-      dist = distance2d(this.getPos(), obstacles[0].point);
+      dist = distance2d(this.getPos(), obstacles[0].point) * 0.8;
     } else {
       dist = maxLaneChangeSteps;
     }
@@ -299,9 +299,10 @@ export class Car extends Square {
     const laneObstacle = this.stepContext.getLaneObstacle();
     if (laneObstacle) {
       let newTarget = laneObstacle.obstacle.getSpeed();
-      newTarget *= laneObstacle.behind ? mergeSlowDownScale : mergeSpeedUpScale;
+      const scale = laneObstacle.behind ? mergeSlowDownScale : mergeSpeedUpScale;
+      newTarget *= scale;
 
-      if (obstacles.length === 0) targetSpeed = newTarget;
+      targetSpeed = Math.min(targetSpeed, newTarget);
     }
 
     return targetSpeed;

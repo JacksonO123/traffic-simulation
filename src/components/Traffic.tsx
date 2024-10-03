@@ -2,10 +2,10 @@ import { Simulation, Camera, vector3, colorf } from 'simulationjsv2';
 import { onMount } from '@jacksonotto/pulse';
 import './Traffic.css';
 import { TrafficEngine } from '../engine/engine';
-import { init } from '../init/init2';
+// import { init } from '../init/init2';
 // import { init } from '../init/init3';
 // import { init } from '../init/init4';
-// import { init } from '../init/init5';
+import { init } from '../init/init5';
 // import { init } from '../init/init6';
 // import { init } from '../init/init7';
 

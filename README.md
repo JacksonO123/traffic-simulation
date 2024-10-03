@@ -2,13 +2,13 @@
 
 The goal of this project is to try to accurately simulate the behavior of traffic on highways and roadways
 
-## Currently working on: **Merging**
+## Currently working on: **Intersections**
 
-Cars should change lanes if they are behind a slow car, or stopped in traffic
+Intersections decide the behavior of its related cars
 
 ## Feature/Bug Todo
 
-- [ ] Make lane changing smarter
+- [x] Make lane changing smarter
 - [ ] Fix set start for intersections
 - [ ] Add various types of intersections
 - [x] Add intersections as a part of a cars route
@@ -22,7 +22,7 @@ Cars should change lanes if they are behind a slow car, or stopped in traffic
 
 - Road splines
   - Roads are based off of spline shapes which can have any number of curves
-  - Roads can have any number of lanes, variable lane width, lane gap
+  - Roads can have any number of lanes
   - Roads can be specified to be bidirectional
 - Cars
   - Cars can be specified to have variable abilities: acceleration, braking, etc
@@ -34,8 +34,9 @@ Cars should change lanes if they are behind a slow car, or stopped in traffic
   - Cars going into an intersection find the correct lane for their route
   - Intersections can control the start and end positions of splines and connecting them
   - Cars with an intersection in their route will stop and start
+  - Intersections control when cars decide the path is clear
 - Traffic engine
-  - Engine and cars respond to other cars on the road, slowing, changing lanes
+  - Engine and cars respond to other cars on the road, slowing, speeding up, changing lanes
 
 ## Technical details
 
