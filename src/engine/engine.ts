@@ -148,7 +148,6 @@ export class TrafficEngine {
         return [false, dist, obstaleInfo];
       }
     } else {
-      console.log(dist, laneChangeMinDist);
       if (dist <= laneChangeMinDist) {
         return [false, dist, obstaleInfo];
       }

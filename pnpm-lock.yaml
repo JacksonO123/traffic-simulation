@@ -15,8 +15,8 @@ importers:
         specifier: latest
         version: 0.1.1
       simulationjsv2:
-        specifier: ^0.8.4
-        version: 0.8.4
+        specifier: ^0.9.0
+        version: 0.9.0
       vite:
         specifier: ^5.1.4
         version: 5.2.13(@types/node@20.14.2)
@@ -949,8 +949,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  simulationjsv2@0.8.4:
-    resolution: {integrity: sha512-pEPaW1R5UWbnmU7VIQDAFW3VtKArmJ2FV2+NTnQ0wrmTabZ6mF04fcJ3CBTYCaKV6z6OYa7ouhtt44iZMLoCpA==}
+  simulationjsv2@0.9.0:
+    resolution: {integrity: sha512-nkwZBdaNmh+CxWtA16fkqnRoAHMJ7M4nfxEZIl/y8mqLX8MfissaIFq40UPPxANH/pInmR9e37NGflyxE1HOHA==}
 
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
@@ -1991,7 +1991,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  simulationjsv2@0.8.4:
+  simulationjsv2@0.9.0:
     dependencies:
       '@webgpu/types': 0.1.48
       wgpu-matrix: 2.9.1

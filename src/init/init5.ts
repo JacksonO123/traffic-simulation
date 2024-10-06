@@ -14,17 +14,17 @@ import { carHeight, laneColor } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const roadSpline = new Spline2d(
-    vertex(100, -75, 0, laneColor),
+    vertex(100, -150, 0, laneColor),
     [
-      splinePoint2d(vertex(500), vector2(400), vector2(-200, 50)),
+      splinePoint2d(vertex(1000), vector2(800), vector2(-400, 100)),
       continuousSplinePoint2d(vertex(), vector2())
     ],
     100
   );
 
   const roadSpline2 = new Spline2d(vertex(0, 0, 0, laneColor), [
-    splinePoint2d(vertex(250, -100), vector2(100), vector2(0, 100)),
-    continuousSplinePoint2d(vertex(0, -200), vector2(100))
+    splinePoint2d(vertex(500, -200), vector2(200), vector2(0, 200)),
+    continuousSplinePoint2d(vertex(0, -400), vector2(200))
   ]);
 
   canvas.add(roadSpline);
@@ -32,7 +32,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
 
   const road = new Road(roadSpline, 4, 20, carHeight, true);
   const road2 = new Road(roadSpline2, 4, 20, carHeight, true);
-  const intersection = new TrafficLight(vector2(600, -500), 4, carHeight, true);
+  const intersection = new TrafficLight(vector2(1200, -1000), 4, carHeight, true);
 
   intersection.addPaths(canvas);
   intersection.connectRoadEnd(road, 0, 200);

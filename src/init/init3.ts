@@ -15,10 +15,10 @@ import { SP } from '../types/traffic';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const roadSpline = new Spline2d(
-    vertex(100, -75, 0, colorf(75)),
+    vertex(100, -150, 0, colorf(75)),
     [
-      splinePoint2d(vertex(500, -400), vector2(400), vector2(-400)),
-      continuousSplinePoint2d(vertex(500, -800), vector2(400))
+      splinePoint2d(vertex(1000, -500), vector2(600), vector2(-800)),
+      continuousSplinePoint2d(vertex(1000, -1200), vector2(800))
     ],
     100
   );

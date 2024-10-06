@@ -1,13 +1,10 @@
 import {
-  Circle,
   Simulation,
   Spline2d,
-  Vector2,
   color,
   colorf,
   continuousSplinePoint2d,
   splinePoint2d,
-  vec2,
   vector2,
   vertex
 } from 'simulationjsv2';
@@ -18,10 +15,10 @@ import { carHeight } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const roadSpline = new Spline2d(
-    vertex(100, -75, 0, colorf(75)),
+    vertex(100, -150, 0, colorf(75)),
     [
-      splinePoint2d(vertex(500, -300), vector2(400), vector2(-400)),
-      continuousSplinePoint2d(vertex(550, -650), vector2(400))
+      splinePoint2d(vertex(1000, -600), vector2(800), vector2(-800)),
+      continuousSplinePoint2d(vertex(1100, -1300), vector2(800))
     ],
     100
   );

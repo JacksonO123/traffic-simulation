@@ -23,11 +23,9 @@ import { ContinueState, IntersectionTurn, LaneObstacle, Obstacle, SP } from '../
 import {
   carHeight,
   carWidth,
-  idprScale,
   laneChangeStartDist,
   laneGap,
   laneColor,
-  dprScale,
   maxLaneChangeSteps,
   minStopDistance,
   minIntersectionDist,
@@ -96,7 +94,7 @@ export class Car extends Square {
 
   constructor(lane: number, startPoint: SP, color?: Color, loop = false, canChangeLane = true) {
     // TODO check for correct center offset
-    super(vector2(), carWidth * devicePixelRatio, carHeight * devicePixelRatio, color, 0);
+    super(vector2(), carWidth, carHeight, color, 0);
 
     this.maxSpeed = 0;
     this.speed = 0.1;
@@ -153,7 +151,7 @@ export class Car extends Square {
   }
 
   setMaxSpeed(speed: number) {
-    this.maxSpeed = speed * idprScale;
+    this.maxSpeed = speed;
   }
 
   setRoute(route: Road[]) {
@@ -173,7 +171,6 @@ export class Car extends Square {
   private routeUpdated() {
     const startPoint = vector3FromVector2(this.roadData.getCurrentPoint());
     vec2.add(startPoint, this.roadData.getCurrentSpline().getPos(), startPoint);
-    vec2.scale(startPoint, 1 / devicePixelRatio, startPoint);
 
     const toPoint = cloneBuf(this.roadData.getLookAtPoint());
     vec2.add(toPoint, this.roadData.getCurrentSpline().getPos(), toPoint);
@@ -194,11 +191,9 @@ export class Car extends Square {
 
     const toPos = vector3FromVector2(this.roadData.getCurrentPoint());
     vec2.add(toPos, this.roadData.getCurrentSpline().getPos(), toPos);
-    vec2.scale(toPos, 1 / devicePixelRatio, toPos);
 
     const toPoint = cloneBuf(this.roadData.getLookAtPoint());
     vec2.add(toPoint, this.roadData.getCurrentSpline().getPos(), toPoint);
-    vec2.scale(toPoint, 1 / devicePixelRatio, toPoint);
 
     const rotation = Math.atan2(toPoint[1] - toPos[1], toPoint[0] - toPos[0]);
 
@@ -346,12 +341,12 @@ export class Car extends Square {
     this.speed = this.stepToTargetSpeed(this.speed, targetSpeed);
 
     let toTravel = this.speed * scale;
-    let dist = distance2d(pos, toPos) / devicePixelRatio;
+    let dist = distance2d(pos, toPos);
 
     const moveCar = (amount: number) => {
       if (isNaN(rotation)) return;
 
-      const velocity = vector3(amount / devicePixelRatio);
+      const velocity = vector3(amount);
       vec2.rotate(velocity, vector2(), rotation, velocity);
 
       this.rotateTo(vector3(0, 0, rotation));
@@ -462,7 +457,7 @@ export class Road {
 
         const normal = vector2(-tangent[1], tangent[0]);
         vec2.normalize(normal, normal);
-        vec2.scale(normal, (this.laneWidth * scale - indexDistance * laneGap) * devicePixelRatio, normal);
+        vec2.scale(normal, this.laneWidth * scale - indexDistance * laneGap, normal);
         vec2.add(pos, normal, pos);
 
         arr.push(pos);
@@ -485,7 +480,7 @@ export class Road {
   }
 
   recomputePoints() {
-    this.updateRoadPoints(this.spline.getLength() * dprScale);
+    this.updateRoadPoints(this.spline.getLength());
   }
 
   getLaneStartPoint(lane: number) {
@@ -631,9 +626,8 @@ export class TrafficLight extends Intersection {
     this.pos = vector3FromVector2(pos);
     this.intersectionLength = laneWidth * numLanes + laneGap * (numLanes + 1);
 
-    const smallTurnScale = 14;
-    const turnControlScale = 2 * smallTurnScale * (numLanes / 2);
-    const laneScale = (numLanes - 1) / 2;
+    const smallTurnScale = 22;
+    const turnControlScale = 2 * smallTurnScale * (numLanes / 2) + laneGap;
 
     const roadSpline1 = new Spline2d(
       vertex(this.pos[0] - this.intersectionLength / 2, this.pos[1], 0, laneColor),
@@ -719,7 +713,7 @@ export class TrafficLight extends Intersection {
       [
         splinePoint2d(
           vertex(
-            this.intersectionLength / 2 + laneGap * laneScale,
+            this.intersectionLength / 2 + (laneWidth + laneGap) / 2,
             -this.intersectionLength / 2 - (laneWidth + laneGap) / 2
           ),
           vector2(0, -turnControlScale),
@@ -832,6 +826,7 @@ export class TrafficLight extends Intersection {
       appendPathLane(turn4, 2, 3);
     }
 
+    // this.paths = [road1, road2, turn1, turn2, turn3, turn4, turn5, turn6, turn7, turn8];
     this.paths = [road1, road2, turn1, turn2, turn3, turn4, turn5, turn6, turn7, turn8];
     this.pathLanes = pathLanes;
   }
