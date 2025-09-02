@@ -1,10 +1,7 @@
 import { Vector2, Vector3 } from 'simulationjsv2';
 import { Car, Road } from '../engine/road';
 
-export enum SP {
-  START,
-  END
-}
+export type Origin = 'start' | 'end';
 
 export enum ContinueState {
   CONTINUE,
@@ -31,4 +28,11 @@ export type Obstacle = {
 export type LaneObstacle = {
   obstacle: Car;
   behind: boolean;
+};
+
+export type EndpointDistances = {
+  endStartDist: number;
+  startEndDist: number;
+  startStartDist: number;
+  endEndDist: number;
 };

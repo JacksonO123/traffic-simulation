@@ -7,9 +7,8 @@ import {
   vector2,
   vertex
 } from 'simulationjsv2';
-import { SP } from '../types/traffic';
 import { TrafficEngine } from '../engine/engine';
-import { Car, Road, TrafficLight, laneLines } from '../engine/road';
+import { Car, Road, StopSign, laneLines } from '../engine/road';
 import { carHeight, laneColor } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
@@ -32,7 +31,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
 
   const road = new Road(roadSpline, 4, 20, carHeight, true);
   const road2 = new Road(roadSpline2, 4, 20, carHeight, true);
-  const intersection = new TrafficLight(vector2(1400, -1200), 4, carHeight, true);
+  const intersection = new StopSign(vector2(1400, -1200), 4, carHeight, true);
 
   intersection.addPaths(canvas);
   intersection.connectRoadEnd(road, 0, 200);
@@ -40,21 +39,18 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
 
   canvas.add(laneLines.getCollection());
 
-  const dir = SP.START;
-  // const dir = SP.END;
-
-  const car = new Car(1, dir, color(0, 123, 255));
+  const car = new Car(1, color(0, 123, 255));
   canvas.add(car);
-  car.setRoute([road, intersection, road2]);
+  car.setRoute([road2, intersection, road]);
   // car.setRoute([road]);
   // car.setMaxSpeed(1);
   // car.setMaxSpeed(6);
   car.setMaxSpeed(3);
   engine.addCar(car);
 
-  const car2 = new Car(0, dir, color(0, 123, 255));
+  const car2 = new Car(0, color(0, 123, 255));
   canvas.add(car2);
-  car2.setRoute([road, intersection, road2]);
+  car2.setRoute([road2, intersection, road]);
   // car2.setRoute([road]);
   // car2.setMaxSpeed(1);
   // car2.setMaxSpeed(6);

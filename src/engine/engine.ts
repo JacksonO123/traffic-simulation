@@ -7,7 +7,7 @@ import {
   laneChangeMinFrontDist,
   speedUpCutoffRotation
 } from './constants';
-import { ContinueState, LaneObstacle, Obstacle, SP } from '../types/traffic';
+import { ContinueState, LaneObstacle, Obstacle } from '../types/traffic';
 import { brakingDistance, stopDistance } from './params';
 import { closestRoadPoint, splineDistPoint, vec2Angle } from '../utils/utils';
 
@@ -18,6 +18,15 @@ export class TrafficEngine {
   constructor() {
     this.cars = [];
     this.animationId = null;
+  }
+
+  running() {
+    return this.animationId !== null;
+  }
+
+  empty() {
+    this.stop();
+    this.cars = [];
   }
 
   setCars(cars: Car[]) {
@@ -77,11 +86,11 @@ export class TrafficEngine {
 
     const route = [...car.getRoute()];
     const index = car.getRoadIndex();
-    const nextRoad = route[index + (car.getStartPoint() === SP.START ? 1 : -1)];
+    const nextRoad = route[index + 1];
 
     if (nextRoad instanceof Intersection) {
-      const roadAfter = route[index + (car.getStartPoint() === SP.START ? 2 : -2)];
-      const point = nextRoad.canContinue(car, res, route[index], roadAfter);
+      const roadAfter = route[index + 2];
+      const point = nextRoad.getContinueAction(car, res, route[index], roadAfter);
 
       if (point === ContinueState.CONTINUE || point === ContinueState.NO_PATH) {
         return res;
