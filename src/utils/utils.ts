@@ -6,11 +6,11 @@ import {
   color,
   distance2d,
   vec2,
-  vector2,
   vector2FromVector3
 } from 'simulationjsv2';
 import { EndpointDistances, Origin } from '../types/traffic';
-import { Intersection, Road, TurnLane } from '../engine/road';
+import { debugCollection, Intersection, Road, TurnLane } from '../engine/road';
+import { showRoadDebugGraphics } from '../engine/constants';
 
 // remove when lib fixes angle function on vec2/vec3
 export const vec2Angle = (a: Vector2m, b: Vector2m) => {
@@ -93,14 +93,16 @@ export const getEndpointDistances = (road1: Road, road2: Road): EndpointDistance
   vec2.add(road2Pos, road2Start, road2Start);
   vec2.add(road2Pos, road2End, road2End);
 
-  const circ1 = new Circle(road1Start, 4, color(0, 255));
-  const circ2 = new Circle(road1End, 4, color(0, 255));
-  const circ3 = new Circle(road2Start, 4, color(255, 120, 255));
-  const circ4 = new Circle(road2End, 4, color(255, 120, 255));
-  window.canvas.add(circ1);
-  window.canvas.add(circ2);
-  window.canvas.add(circ3);
-  window.canvas.add(circ4);
+  if (showRoadDebugGraphics) {
+    const circ1 = new Circle(road1Start, 4, color(0, 255));
+    const circ2 = new Circle(road1End, 4, color(255, 120, 255));
+    const circ3 = new Circle(road2Start, 4, color(0, 255));
+    const circ4 = new Circle(road2End, 4, color(255, 120, 255));
+    debugCollection.add(circ1);
+    debugCollection.add(circ2);
+    debugCollection.add(circ3);
+    debugCollection.add(circ4);
+  }
 
   const endStartDist = distance2d(road1End, road2Start);
   const startEndDist = distance2d(road1Start, road2End);
@@ -156,7 +158,6 @@ export const inferRoadOrigins = (route: Road[], current: number): Origin[] => {
     }
 
     road1 = turnLane.road;
-    road1.getSpline().fill(color(255));
   }
 
   if (road2 instanceof Intersection) {

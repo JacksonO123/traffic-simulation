@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@jacksonotto/pulse": "^0.3.3",
+    "@jacksonotto/signals": "^2.0.0",
     "@jacksonotto/vite-plugin-pulse": "latest",
     "simulationjsv2": "link:../simulationjs/v2",
     "vite": "^5.1.4"

@@ -236,19 +236,20 @@ export class RoadData {
 
     const origin = this.getCurrentOrigin();
     const road = this.getCurrentRoad();
+    const numLanes = road.getNumLanes();
 
-    let relativeLane = this.lane;
+    let laneRes = this.lane;
 
     if (lane !== undefined) {
       checkLaneBounds(road, lane);
-      relativeLane = lane;
+      laneRes = lane;
     }
 
     if (road.isTwoWay() && origin === 'start') {
-      return road.getNumLanes() - relativeLane - 1;
+      return numLanes - laneRes - 1;
     }
 
-    return relativeLane;
+    return laneRes;
   }
 
   private routeUpdated() {
@@ -350,10 +351,10 @@ export class RoadData {
   }
 
   private getLanePoints(road: Road, lane: number) {
-    const origin = this.getCurrentOrigin();
-    const isStart = origin === 'start';
-
     if (road instanceof Intersection) {
+      const origin = this.getCurrentOrigin();
+      const isStart = origin === 'start';
+
       const prevRoad = this.route[this.roadIndex - 1];
       const nextRoad = this.route[this.roadIndex + 1];
       const intersectionPathRoad = road.getPath(prevRoad, nextRoad);
@@ -384,7 +385,6 @@ export class RoadData {
   nextPoint() {
     const origin = this.getCurrentOrigin();
     const isStart = origin === 'start';
-    const lane = this.getAbsoluteLane();
 
     if (this.isChangingLanes()) {
       this.laneChangeIndex++;
@@ -408,7 +408,9 @@ export class RoadData {
         this.roadIndex = 0;
       }
 
+      const lane = this.getAbsoluteLane();
       this.roadPoints = this.getLanePoints(this.getCurrentRoad(), lane);
+
       if (this.getCurrentOrigin() === 'start') {
         this.roadPointIndex = 0;
       } else {

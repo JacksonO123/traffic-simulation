@@ -1,5 +1,5 @@
-import App from "./App";
-import { mount } from "@jacksonotto/pulse";
-import "./index.css";
+import App from './App';
+import { mount } from '@jacksonotto/pulse';
+import './index.css';
 
-mount(<App />);
+mount(() => <App />);

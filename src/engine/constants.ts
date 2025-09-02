@@ -2,8 +2,6 @@ import { colorf } from 'simulationjsv2';
 
 export const fps60Delay = 1000 / 60;
 
-export const laneGap = 16;
-
 export const carWidth = 100;
 export const carHeight = 50;
 
@@ -12,6 +10,7 @@ export const minStopDistance = carWidth / 2;
 // used when scaling stop distance with speed ratio
 export const followDistScale = 5;
 
+export const laneGap = 16;
 export const laneChangeStartDist = 400;
 export const minLaneChangeSteps = 120;
 export const maxLaneChangeSteps = 300;
@@ -32,3 +31,8 @@ export const mergeSpeedUpScale = 1.25;
 export const laneColor = colorf(75);
 
 export const intersectionRegisterDist = 125;
+
+// renderer settings
+
+// export const showRoadDebugGraphics = true;
+export const showRoadDebugGraphics = false;

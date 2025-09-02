@@ -15,6 +15,7 @@ import {
   splinePoint2d,
   vec2,
   vec3,
+  vec4,
   vector2,
   vector3,
   vector3FromVector2,
@@ -31,7 +32,8 @@ import {
   minStopDistance,
   minIntersectionDist,
   mergeSlowDownScale,
-  mergeSpeedUpScale
+  mergeSpeedUpScale,
+  showRoadDebugGraphics
 } from './constants';
 import { RoadData, StepContext } from './data';
 import {
@@ -63,8 +65,21 @@ class LaneLines {
   addLines(pointsArr: Vector2[][]) {
     const traces: TraceLines2d[] = [];
 
-    pointsArr.forEach((points) => {
-      const trace = new TraceLines2d(this.lineColor);
+    pointsArr.forEach((points, index) => {
+      let laneColor: Color;
+
+      if (showRoadDebugGraphics) {
+        const laneColorVec = this.lineColor.toVec4();
+        const ratio = (pointsArr.length - index) / pointsArr.length;
+        vec4.mulScalar(laneColorVec, ratio, laneColorVec);
+        // set a to 1 for opaque
+        laneColorVec[3] = 1;
+        laneColor = Color.fromVec4(laneColorVec);
+      } else {
+        laneColor = this.lineColor;
+      }
+
+      const trace = new TraceLines2d(laneColor);
       points.forEach((point) => trace.addPoint(point));
       traces.push(trace);
       this.collection.add(trace);
@@ -86,6 +101,7 @@ class LaneLines {
 }
 
 export const laneLines = new LaneLines();
+export const debugCollection = new EmptyElement('debug-graphics');
 
 export class Car extends Square {
   private stepContext: StepContext;
