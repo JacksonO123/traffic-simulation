@@ -18,7 +18,6 @@ const Traffic = () => {
 
   const start = () => {
     canvas = new Simulation(canvasId, new Camera(vector3()), true);
-    window.canvas = canvas;
 
     canvas.start();
     canvas.fitElement();

@@ -98,8 +98,8 @@ export class RoadData {
       const afterRoad = this.route[this.roadIndex + 2];
       const path = nextRoad.getPath(this.getCurrentRoad(), afterRoad);
 
-      if (path && path instanceof TurnLane) {
-        let toLane = path.getLane();
+      if (path && path.road instanceof TurnLane) {
+        let toLane = path.road.getLane();
         const diff = Math.abs(this.lane - toLane);
 
         if (diff > 1) {
