@@ -9,7 +9,6 @@ Intersections decide the behavior of its related cars
 ## Feature/Bug Todo
 
 - [x] Make lane changing smarter
-- [ ] Fix set start for intersections
 - [ ] Add various types of intersections
 - [x] Add intersections as a part of a cars route
 - [x] Acceleration
@@ -25,18 +24,18 @@ Intersections decide the behavior of its related cars
   - Roads can have any number of lanes
   - Roads can be specified to be bidirectional
 - Cars
-  - Cars can be specified to have variable abilities: acceleration, braking, etc
+  - Cars can be specified to have variable abilities: acceleration, braking, following distance, etc
   - Cars accelerate and decelerate to the appropriate speed in a situation
+  - Cars change lanes when necessary for navigation or if obstacles in their way are too slow
 - Routes
   - Cars can specify a route of roads and follow it
-  - Cars can specify the direction to traverse the route
+  - Direction of the rout is inferred from the way the roads in the route are positioned
 - Intersections
   - Cars going into an intersection find the correct lane for their route
   - Intersections can control the start and end positions of splines and connecting them
-  - Cars with an intersection in their route will stop and start
-  - Intersections control when cars decide the path is clear
-- Traffic engine
-  - Engine and cars respond to other cars on the road, slowing, speeding up, changing lanes
+  - Cars with an intersection in their route will behave differently depending on the specification
+    of the intersection
+  - Intersections control logic for when paths for cars are clear
 
 ## Technical details
 
