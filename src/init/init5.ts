@@ -46,7 +46,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   // car.setMaxSpeed(1);
   // car.setMaxSpeed(6);
   car.setMaxSpeed(3);
-  car.startAt(0.95);
+  car.startAt(0.73);
   engine.addCar(car);
 
   const car2 = new Car(0, color(0, 123, 255));
@@ -56,6 +56,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   // car2.setMaxSpeed(1);
   // car2.setMaxSpeed(6);
   car2.setMaxSpeed(3);
+  car2.startAt(0.7);
   engine.addCar(car2);
 
   let pressing = false;

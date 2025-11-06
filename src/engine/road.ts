@@ -33,7 +33,8 @@ import {
   minIntersectionDist,
   mergeSlowDownScale,
   mergeSpeedUpScale,
-  showRoadDebugGraphics
+  showRoadDebugGraphics,
+  differLaneNumberColors
 } from './constants';
 import { RoadData, StepContext } from './data';
 import {
@@ -68,7 +69,7 @@ class LaneLines {
     pointsArr.forEach((points, index) => {
       let laneColor: Color;
 
-      if (showRoadDebugGraphics) {
+      if (showRoadDebugGraphics && differLaneNumberColors) {
         const laneColorVec = this.lineColor.toVec4();
         const ratio = (pointsArr.length - index) / pointsArr.length;
         vec4.mulScalar(laneColorVec, ratio, laneColorVec);
@@ -173,6 +174,10 @@ export class Car extends Square {
 
   setMaxSpeed(speed: number) {
     this.maxSpeed = speed;
+  }
+
+  getMaxSpeed() {
+    return this.maxSpeed;
   }
 
   setRoute(route: Road[]) {
@@ -292,7 +297,7 @@ export class Car extends Square {
     this.roadData.setHasStopped();
   }
 
-  private getTargetSpeed() {
+  getTargetSpeed() {
     const road = this.roadData.getCurrentRoad();
     let targetSpeed = Math.min(this.maxSpeed, road.getSpeedLimit());
 

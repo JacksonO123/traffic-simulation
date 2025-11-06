@@ -9,7 +9,7 @@ import {
   vertex
 } from 'simulationjsv2';
 import { TrafficEngine } from '../engine/engine';
-import { Car, Road, laneLines } from '../engine/road';
+import { Car, Road, debugCollection, laneLines } from '../engine/road';
 import { carHeight } from '../engine/constants';
 
 export const init = (engine: TrafficEngine, canvas: Simulation) => {
@@ -27,6 +27,7 @@ export const init = (engine: TrafficEngine, canvas: Simulation) => {
   const road = new Road(roadSpline, 3, 15, carHeight, false);
 
   canvas.add(laneLines.getCollection());
+  canvas.add(debugCollection);
 
   // const points = road.getRoadPoints(1);
   // points.forEach((point) => {

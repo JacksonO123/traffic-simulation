@@ -34,5 +34,7 @@ export const intersectionRegisterDist = 125;
 
 // renderer settings
 
-// export const showRoadDebugGraphics = true;
-export const showRoadDebugGraphics = false;
+export const showRoadDebugGraphics = true;
+// export const showRoadDebugGraphics = false;
+
+export const differLaneNumberColors = false;

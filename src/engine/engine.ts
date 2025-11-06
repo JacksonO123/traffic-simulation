@@ -1,5 +1,14 @@
-import { Vector2, cloneBuf, distance2d, vec2 } from 'simulationjsv2';
-import { Car, Intersection } from './road';
+import {
+  EmptyElement,
+  TraceLines2d,
+  Vector2,
+  cloneBuf,
+  color,
+  distance2d,
+  interpolateColors,
+  vec2
+} from 'simulationjsv2';
+import { Car, Intersection, debugCollection } from './road';
 import {
   fps60Delay,
   intersectionRegisterDist,
@@ -10,6 +19,9 @@ import {
 import { ContinueState, LaneObstacle, Obstacle } from '../types/traffic';
 import { brakingDistance, stopDistance } from './params';
 import { closestRoadPoint, splineDistPoint, vec2Angle } from '../utils/utils';
+
+const pathTraceCollection = new EmptyElement('car-path-trace');
+debugCollection.add(pathTraceCollection);
 
 export class TrafficEngine {
   private cars: Car[];
@@ -224,6 +236,21 @@ export class TrafficEngine {
 
       this.cars[i].setObstaclesAhead(obstaclesAhead);
       this.cars[i].travel(scale);
+
+      const pathTraces = pathTraceCollection.getChildren();
+      const carPos = cloneBuf(this.cars[i].getPos());
+      const traceColor = interpolateColors(
+        [color(0, 255), color(255)],
+        1 - this.cars[i].getSpeed() / this.cars[i].getMaxSpeed()
+      );
+
+      if (pathTraces.length <= i) {
+        const pathTrace = new TraceLines2d(color());
+        pathTrace.addPoint(carPos, traceColor);
+        pathTraceCollection.add(pathTrace);
+      } else {
+        (pathTraces[i] as TraceLines2d).addPoint(carPos, traceColor);
+      }
     }
   }
 
